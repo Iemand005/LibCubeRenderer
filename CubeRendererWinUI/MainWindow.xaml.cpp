@@ -25,6 +25,11 @@ namespace winrt::CubeRendererWinUI::implementation
 		// See
 
         Graphics* graphics = new Graphics();
+
+        graphics->OnError = [](HRESULT hr) {
+            OutputDebugString(TEXT("Oops"));
+        };
+
         graphics->CreateScene();
 		graphics->Init();
 		graphics->LoadTexture(GetExecutableDirectory() / L"steve.png");
@@ -36,7 +41,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
 		swapChainPanel.SizeChanged([graphics](IInspectable const&, SizeChangedEventArgs const& e) {
             auto size = e.NewSize();
-            graphics->Resize(static_cast<UINT>(size.Width), static_cast<UINT>(size.Height));
+            graphics->Resize(size.Width, size.Height);
             graphics->Render(1.0f, -3.0f, -2.0f, 0.0f);
 		});
 

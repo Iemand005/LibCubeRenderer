@@ -10,12 +10,6 @@
     Title="CubeRendererWinUI">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
         <SwapChainPanel Name="SwapChainPanel"/>
     </Grid>
 </Window>
