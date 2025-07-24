@@ -51,8 +51,8 @@ namespace CubeRenderer {
 
 
 #ifdef _DEBUG
-		//wrl::ComPtr<ID3D11Debug> debug = device 
-		////wrl::ComPtr<ID3D11InfoQueue> infoQueue = debug.as<ID3D11InfoQueue>();
+		//ComPtr<ID3D11Debug> debug = device 
+		////ComPtr<ID3D11InfoQueue> infoQueue = debug.as<ID3D11InfoQueue>();
 
 		//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 		//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
@@ -71,7 +71,7 @@ namespace CubeRenderer {
 
 	void Graphics::CreateSwapChain() {
 
-		/*wrl::ComPtr<IDXGIFactory2> factory;
+		/*ComPtr<IDXGIFactory2> factory;
 		ThrowIfFailed(CreateDXGIFactory1(__uuidof(IDXGIFactory2), factory.put_void()));*/
 		//IDXGIDevice* dxgiDevice = device->QueryInterface();
 
@@ -90,15 +90,15 @@ namespace CubeRenderer {
 		swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
 		swapChainDesc.Flags = 0;
 
-		wrl::ComPtr<IDXGIAdapter1> dxgiAdapter;
+		ComPtr<IDXGIAdapter1> dxgiAdapter;
 		dxgiDevice->GetParent(__uuidof(IDXGIAdapter1), &dxgiAdapter);
 
-		wrl::ComPtr<IDXGIFactory2> dxgiFactory2;
+		ComPtr<IDXGIFactory2> dxgiFactory2;
 		dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), &dxgiFactory2);
 
-		wrl::ComPtr<IDXGISwapChain1> swapChain1;
-		swapChain.As<IDXGISwapChain1>(&swapChain1);
+		ComPtr<IDXGISwapChain1> swapChain1;
 		ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc, nullptr, &swapChain1));
+		swapChain1.As<IDXGISwapChain>(&swapChain);
 	}
 
 	void Graphics::CreateDeviceAndSwapChain(HWND hWnd)
@@ -137,14 +137,14 @@ namespace CubeRenderer {
 #endif
 
 		//IDXGISwapChain* swapChain;
-		//wrl::ComPtr<IDXGISwapChain> swapChainOld;
+		//ComPtr<IDXGISwapChain> swapChainOld;
 		ThrowIfFailed(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, nullptr, &context));
 		//swapChain.As<IDXGISwapChain>(&swapChainOld);
 
 #ifdef _DEBUG
-		wrl::ComPtr<ID3D11Debug> debug;
+		ComPtr<ID3D11Debug> debug;
 		device.As<ID3D11Debug>(&debug);
-		wrl::ComPtr<ID3D11InfoQueue> infoQueue;
+		ComPtr<ID3D11InfoQueue> infoQueue;
 		debug.As<ID3D11InfoQueue>(&infoQueue);
 
 		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -208,18 +208,6 @@ namespace CubeRenderer {
 		ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, &pRasterizerState));
 
 		context->RSSetState(pRasterizerState);
-
-		/*D3D11_TEXTURE2D_DESC backBufferDesc = {};
-		backBuffer->GetDesc(&backBufferDesc);*/
-
-		//backBuffer->Release();
-
-		//D3D11_VIEWPORT viewport = { 0 };
-		//viewport.Width = static_cast<float>(backBufferDesc.Width);
-		//viewport.Height = static_cast<float>(backBufferDesc.Height);
-		//viewport.MaxDepth = 1.0f;
-
-		//context->RSSetViewports(1, &viewport);
 	}
 
 	void Graphics::CreateTriangle() {
@@ -285,6 +273,23 @@ namespace CubeRenderer {
 
 	void Graphics::Init() {
 
+		scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, 64, 64);
+
+		// Waist
+		scene->AddCube(8, 12, 4, -2.0f, 12.0f, -2.0f, 16, 16, 64, 64);
+
+		// Left arm
+		scene->AddCube(4, 12, 4, 4.0f, 12.0f, -2.0f, 32, 48, 64, 64);
+
+		// Right arm
+		scene->AddCube(4, 12, 4, -8.0f, 12.0f, -2.0f, 40, 16, 64, 64);
+
+		// Left leg
+		scene->AddCube(4, 12, 4, -0.1, 0.0f, -2.0f, 16, 48, 64, 64);
+
+		// Right leg
+		scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, 64, 64);
+
 		CreateDevice();
 		CreateSwapChain();
 		CreateRenderTarget();
@@ -328,7 +333,7 @@ namespace CubeRenderer {
 
 		//UpdateViewport(1000, 1000);*/
 
-		//wrl::ComPtr<ID3DBlob> pBlob;
+		//ComPtr<ID3DBlob> pBlob;
 
 		//ID3D11Buffer* bufferArray[] = { constantBuffer.Get() };
 		//context->VSSetConstantBuffers(0, 1, bufferArray);
@@ -342,67 +347,6 @@ namespace CubeRenderer {
 		//context->PSSetSamplers(0, 1, sampler.put());
 
 		//context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
-
-	HRESULT Graphics::LoadTextureFromPNG(ID3D11Device* pDevice, const std::wstring& filename)
-	{
-		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-		ULONG_PTR gdiplusToken;
-		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-
-		Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromFile(filename.c_str());
-		if (pBitmap == nullptr || pBitmap->GetLastStatus() != Gdiplus::Ok) {
-			Gdiplus::GdiplusShutdown(gdiplusToken);
-			return E_FAIL;
-		}
-
-		UINT width = pBitmap->GetWidth();
-		UINT height = pBitmap->GetHeight();
-
-		UINT bufferSize = width * height * 4;
-		BYTE* pPixels = new BYTE[bufferSize];
-
-		Gdiplus::BitmapData bitmapData;
-		Gdiplus::Rect rect(0, 0, width, height);
-		pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
-
-		memcpy(pPixels, bitmapData.Scan0, bufferSize);
-
-		pBitmap->UnlockBits(&bitmapData);
-
-		delete pBitmap;
-
-		D3D11_TEXTURE2D_DESC textureDesc = {};
-		textureDesc.Width = width;
-		textureDesc.Height = height;
-		textureDesc.MipLevels = 1;
-		textureDesc.ArraySize = 1;
-		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		textureDesc.SampleDesc.Count = 1;
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags = 0;
-
-		D3D11_SUBRESOURCE_DATA subresourceData = {};
-		subresourceData.pSysMem = pPixels;
-		subresourceData.SysMemPitch = width * 4;
-		subresourceData.SysMemSlicePitch = 0;
-
-		ID3D11Texture2D* pTexture = nullptr;
-		HRESULT hr = pDevice->CreateTexture2D(&textureDesc, &subresourceData, &pTexture);
-		if (FAILED(hr)) {
-			delete[] pPixels;
-			Gdiplus::GdiplusShutdown(gdiplusToken);
-			return hr;
-		}
-
-		hr = pDevice->CreateShaderResourceView(pTexture, nullptr, textureView.GetAddressOf());
-		pTexture->Release();
-		delete[] pPixels;
-
-		Gdiplus::GdiplusShutdown(gdiplusToken);
-
-		return hr;
 	}
 
 	void Graphics::Init(HWND hWnd) {
@@ -426,7 +370,7 @@ namespace CubeRenderer {
 
 		HRESULT hr;
 
-		D3D_FEATURE_LEVEL featureLevels[] = {
+		/*D3D_FEATURE_LEVEL featureLevels[] = {
 			D3D_FEATURE_LEVEL_12_2,
 			D3D_FEATURE_LEVEL_12_1,
 			D3D_FEATURE_LEVEL_12_0,
@@ -459,12 +403,15 @@ namespace CubeRenderer {
 		sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 
-		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, NULL, &context);
+		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, NULL, &context);*/
+
+		CreateDeviceAndSwapChain(hWnd);
 
 		InitializeBlendState();
 
+		CreateRenderTarget();
 
-		ID3D11Resource* pBackBuffer = NULL;
+		/*ID3D11Resource* pBackBuffer = NULL;
 		hr = swapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer));
 
 		hr = device->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView);
@@ -476,15 +423,15 @@ namespace CubeRenderer {
 		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-		hr = device->CreateBuffer(&cbd, nullptr, &constantBuffer);
+		hr = device->CreateBuffer(&cbd, nullptr, &constantBuffer);*/
 
-		viewMatrix = XMMatrixTranslation(0.0f, 0.0f, 100.0f);
+		
 
 		UpdateViewport(hWnd);
 
 		// Load the texture
-		std::wstring texturePath = GetExecutableDirectory() / L"steve.png";
-		hr = LoadTextureFromPNG(device.Get(), texturePath);
+		/*std::wstring texturePath = GetExecutableDirectory() / L"steve.png";
+		hr = LoadTextureFromPNG(device.Get(), texturePath);*/
 
 		D3D11_SAMPLER_DESC sampDesc = {};
 		sampDesc.Filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT; // Use linear filtering for smoother textures
@@ -517,9 +464,9 @@ namespace CubeRenderer {
 
 
 
-		wrl::ComPtr<ID3DBlob> pBlob;
+		ComPtr<ID3DBlob> pBlob;
 
-		wrl::ComPtr<ID3D11PixelShader> pPixelShader;
+		ComPtr<ID3D11PixelShader> pPixelShader;
 		std::wstring fullPathPS = GetExecutableDirectory() / L"PixelShader.cso";
 		hr = D3DReadFileToBlob(fullPathPS.c_str(), &pBlob);
 
@@ -527,7 +474,7 @@ namespace CubeRenderer {
 
 		context->PSSetShader(pPixelShader.Get(), nullptr, 0);
 
-		wrl::ComPtr<ID3D11VertexShader> pVertexShader;
+		ComPtr<ID3D11VertexShader> pVertexShader;
 		std::wstring fullPath = GetExecutableDirectory() / L"VertexShader.cso";
 		hr = D3DReadFileToBlob(fullPath.c_str(), &vertexShaderBlob);
 
@@ -542,7 +489,7 @@ namespace CubeRenderer {
 		{ "TEXTURECOORDINATE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Vertex, textureCoordinate), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
-		wrl::ComPtr<ID3D11InputLayout> pInputLayout;
+		ComPtr<ID3D11InputLayout> pInputLayout;
 
 		hr = device->CreateInputLayout(layout, std::size(layout), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &pInputLayout);
 
@@ -625,7 +572,7 @@ namespace CubeRenderer {
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
 
-		wrl::ComPtr<ID3D11Resource> backBuffer;
+		ComPtr<ID3D11Resource> backBuffer;
 		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL, &renderTargetView));
 
@@ -768,6 +715,8 @@ namespace CubeRenderer {
 		context->RSSetViewports(1, &vp);
 
 		projectionMatrix = XMMatrixPerspectiveFovLH(XM_PIDIV4, aspectRatio, 0.1f, 500.0f);
+
+		viewMatrix = XMMatrixTranslation(0.0f, 0.0f, 100.0f);
 	}
 
 	void Graphics::Clear() {
@@ -816,4 +765,60 @@ namespace CubeRenderer {
 		context->OMSetBlendState(pBlendState, nullptr, 0xFFFFFFFF);
 	}
 
+	IDXGISwapChain* Graphics::GetSwapChain() {
+		return swapChain.Get();
+	}
+
+	void Graphics::LoadTexture(const std::filesystem::path& filename) {
+		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+		Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromFile(filename.c_str());
+		if (pBitmap == nullptr || pBitmap->GetLastStatus() != Gdiplus::Ok) {
+			Gdiplus::GdiplusShutdown(gdiplusToken);
+			ThrowIfFailed(E_FAIL);
+		}
+
+		UINT width = pBitmap->GetWidth();
+		UINT height = pBitmap->GetHeight();
+
+		UINT bufferSize = width * height * 4;
+		BYTE* pPixels = new BYTE[bufferSize];
+
+		Gdiplus::BitmapData bitmapData;
+		Gdiplus::Rect rect(0, 0, width, height);
+		pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
+
+		memcpy(pPixels, bitmapData.Scan0, bufferSize);
+
+		pBitmap->UnlockBits(&bitmapData);
+
+		delete pBitmap;
+
+		D3D11_TEXTURE2D_DESC textureDesc = {};
+		textureDesc.Width = width;
+		textureDesc.Height = height;
+		textureDesc.MipLevels = 1;
+		textureDesc.ArraySize = 1;
+		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.CPUAccessFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA subresourceData = {};
+		subresourceData.pSysMem = pPixels;
+		subresourceData.SysMemPitch = width * 4;
+		subresourceData.SysMemSlicePitch = 0;
+
+		ID3D11Texture2D* pTexture = nullptr;
+		ThrowIfFailed(device->CreateTexture2D(&textureDesc, &subresourceData, &pTexture));
+
+		ThrowIfFailed(device->CreateShaderResourceView(pTexture, nullptr, textureView.GetAddressOf()));
+		pTexture->Release();
+		delete[] pPixels;
+
+		Gdiplus::GdiplusShutdown(gdiplusToken);
+	}
 }

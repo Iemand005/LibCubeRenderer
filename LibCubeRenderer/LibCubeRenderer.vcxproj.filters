@@ -36,9 +36,6 @@
     <ClInclude Include="include\Base.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsPrivate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LibCubeRenderer.cpp">

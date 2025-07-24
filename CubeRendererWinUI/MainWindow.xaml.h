@@ -6,6 +6,7 @@ namespace winrt::CubeRendererWinUI::implementation
 {
     struct MainWindow : MainWindowT<MainWindow>
     {
+        MainWindow();
         //MainWindow()
         //{
         //    // Xaml objects should not call InitializeComponent during construction.

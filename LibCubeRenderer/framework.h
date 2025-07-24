@@ -19,4 +19,4 @@
 #pragma comment(lib, "D3DCompiler.lib")
 #pragma comment(lib, "gdiplus.lib")
 
-#include "GraphicsPrivate.h"
+//#include "GraphicsPrivate.h"
