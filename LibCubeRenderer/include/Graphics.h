@@ -42,8 +42,8 @@ namespace CubeRenderer {
 	class Graphics {
 	public:
 
-		void Init();
-		void Init(HWND hWnd);
+		Scene* Init();
+		Scene* Init(HWND hWnd);
 
 		void CreateDevice();
 		void CreateSwapChain();
