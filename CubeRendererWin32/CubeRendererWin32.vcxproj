@@ -140,6 +140,7 @@
   <ItemGroup>
     <Image Include="CubeRendererWin32.ico" />
     <Image Include="small.ico" />
+    <Image Include="steve.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LibCubeRenderer\LibCubeRenderer.vcxproj">

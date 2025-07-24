@@ -1,4 +1,17 @@
-float4 main() : SV_TARGET
+// Texture and Sampler declarations
+Texture2D textureSampler : register(t0);
+SamplerState samplerState : register(s0); // Sampler state
+
+// The structure coming from the vertex shader
+struct VS_Output
 {
-	return float4(1.0f, 0.0f, 1.0f, 1.0f);
+    float4 pos : SV_POSITION;
+    float2 textureCoordinate : TEXTURECOORDINATE0;
+};
+
+// The main pixel shader function
+float4 main(VS_Output input) : SV_TARGET
+{
+    float4 texColor = textureSampler.Sample(samplerState, input.textureCoordinate);
+    return texColor.bgra;
 }

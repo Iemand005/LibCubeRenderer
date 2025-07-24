@@ -70,7 +70,7 @@ namespace CubeRenderer {
 		ComPtr<ID3D11Texture2D> depthStencilBuffer;
 		ComPtr<ID3D11DepthStencilState> depthStencilState;
 
-		ComPtr<ID3D11RenderTargetView> RenderTargetView;
+		ComPtr<ID3D11RenderTargetView> renderTargetView;
 		ComPtr<ID3D11DepthStencilView> depthStencilView;
 
 		ComPtr<ID3D11ShaderResourceView> textureView;
@@ -115,7 +115,7 @@ namespace CubeRenderer {
 
 		void CreateInputLayout();
 
-
+		HRESULT LoadTextureFromPNG(ID3D11Device* pDevice, const std::wstring& filename);
 
 		void CreateTriangle();
 
@@ -132,6 +132,8 @@ namespace CubeRenderer {
 		Scene* GetScene();
 
 		void InitializeBlendState();
+
+		void UpdateViewport(HWND hWnd);
 
 		std::function<void(HRESULT)> OnError;
 	};

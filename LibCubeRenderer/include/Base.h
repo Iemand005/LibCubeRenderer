@@ -13,6 +13,10 @@
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
 
+#include <gdiplus.h>
+
+#include <dwmapi.h>
+
 #include <wrl/client.h>
 
 #include <Windows.h>
@@ -20,5 +24,7 @@
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 
+#pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "D3DCompiler.lib")
+#pragma comment(lib, "gdiplus.lib")
