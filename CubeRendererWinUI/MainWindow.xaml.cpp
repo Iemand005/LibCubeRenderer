@@ -25,14 +25,20 @@ namespace winrt::CubeRendererWinUI::implementation
 		// See
 
         Graphics* graphics = new Graphics();
-		graphics->Init();
         graphics->CreateScene();
+		graphics->Init();
 		graphics->LoadTexture(GetExecutableDirectory() / L"steve.png");
 
 		auto swapChainPanel = this->SwapChainPanel();
         IDXGISwapChain *swapChain = graphics->GetSwapChain();
         auto nativePanel = swapChainPanel.as<ISwapChainPanelNative>();
         nativePanel->SetSwapChain(swapChain);
+
+		swapChainPanel.SizeChanged([graphics](IInspectable const&, SizeChangedEventArgs const& e) {
+            auto size = e.NewSize();
+            graphics->Resize(static_cast<UINT>(size.Width), static_cast<UINT>(size.Height));
+            graphics->Render(1.0f, -3.0f, -2.0f, 0.0f);
+		});
 
 		graphics->Render(3.0f, -3.0f, -2.0f, 0.0f);
 	}

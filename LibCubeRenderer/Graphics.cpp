@@ -3,30 +3,6 @@
 
 namespace CubeRenderer {
 
-
-	//void Graphics::AttachTo(SwapChainPanel panel) {
-	//	auto nativePanel = panel.as<ISwapChainPanelNative>();
-	//	ThrowIfFailed(nativePanel->SetSwapChain(swapChain.Get()));
-
-	//	//UINT width = panel.Width();
-	//	//UINT height = panel.Height();
-
-	//	panel.SizeChanged([this](IInspectable const& sender, SizeChangedEventArgs const& args) {
-	//		auto panel = sender.as<SwapChainPanel>();
-	//		UINT width = panel.ActualWidth();
-	//		UINT height = panel.ActualHeight();
-	//		Resize(width, height);
-	//		});	
-
-	//}
-
-
-	//Graphics::Graphics(SwapChainPanel panel) {
-
-	//	Init();
-	//	AttachTo(panel);
-	//}
-
 	void Graphics::CreateDevice()
 	{
 
@@ -47,7 +23,7 @@ namespace CubeRenderer {
 		D3D_FEATURE_LEVEL selectedFeatureLevel;
 		ThrowIfFailed(D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, 0, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, &selectedFeatureLevel, &context));
 
-		ThrowIfFailed(device->QueryInterface(__uuidof(IDXGIDevice), &dxgiDevice));
+		ThrowIfFailed(device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
 
 
 #ifdef _DEBUG
@@ -91,10 +67,10 @@ namespace CubeRenderer {
 		swapChainDesc.Flags = 0;
 
 		ComPtr<IDXGIAdapter1> dxgiAdapter;
-		dxgiDevice->GetParent(__uuidof(IDXGIAdapter1), &dxgiAdapter);
+		dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter));
 
 		ComPtr<IDXGIFactory2> dxgiFactory2;
-		dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), &dxgiFactory2);
+		dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
 
 		ComPtr<IDXGISwapChain1> swapChain1;
 		ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc, nullptr, &swapChain1));
@@ -180,6 +156,8 @@ namespace CubeRenderer {
 
 		ThrowIfFailed(device->CreateBuffer(&cbd, nullptr, &constantBuffer));
 
+		context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
+
 
 		D3D11_SAMPLER_DESC sampDesc = {};
 		sampDesc.Filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT; // Use linear filtering for smoother textures
@@ -248,11 +226,15 @@ namespace CubeRenderer {
 	void Graphics::CreateInputLayout() {
 
 		D3D11_INPUT_ELEMENT_DESC layout[] = {
-			{ "POSITION", 0, DXGI_FORMAT_R16G16_FLOAT, 0, offsetof(Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			//{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0,  offsetof(Vertex, textureCoordinate), D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXTURECOORDINATE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Vertex, textureCoordinate), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
-		ThrowIfFailed(device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &inputLayout));
+		ComPtr<ID3D11InputLayout> pInputLayout;
+
+		ThrowIfFailed(device->CreateInputLayout(layout, std::size(layout), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &pInputLayout));
+
+		context->IASetInputLayout(pInputLayout.Get());
 	}
 
 	void Graphics::CreateVertexShader() {
@@ -273,6 +255,8 @@ namespace CubeRenderer {
 
 	void Graphics::Init() {
 
+		CreateScene();
+		
 		scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, 64, 64);
 
 		// Waist
@@ -292,64 +276,29 @@ namespace CubeRenderer {
 
 		CreateDevice();
 		CreateSwapChain();
+
+		InitializeBlendState();
+
 		CreateRenderTarget();
-		UpdateViewport(1000, 1000); // Initial size
 
-		CreateVertexShader();
+		//UpdateViewport(2000, 1000);
+
 		CreatePixelShader();
+		CreateVertexShader();
+
 		CreateInputLayout();
-		CreateTriangle();
 
-		// Set up initial rendering state
-		ID3D11RenderTargetView* rtv = renderTargetView.Get();
-		context->OMSetRenderTargets(1, &rtv, nullptr);
-		context->IASetInputLayout(inputLayout.Get());
+		UpdateScene();
 
-		///*CreateDevice();
-		//CreateSwapChain();
-		//CreateRenderTarget();
+		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
+		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
 
-		//CreatePixelShader();
-		//CreateVertexShader();
-
-		//CreateInputLayout();
-
-		//CreateTriangle();*/
-
-		//Resize(100, 100);
-
-
-		//InitializeBlendState();
-
-		///*D3D11_BUFFER_DESC cbd = {};
-		//cbd.ByteWidth = sizeof(ConstantBuffer);
-		//cbd.Usage = D3D11_USAGE_DYNAMIC;
-		//cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		//cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		//ThrowIfFailed(device->CreateBuffer(&cbd, nullptr, constantBuffer.put()));
-
-		//viewMatrix = XMMatrixTranslation(0.0f, 0.0f, 100.0f);
-
-		//UpdateViewport(1000, 1000);*/
-
-		//ComPtr<ID3DBlob> pBlob;
-
-		//ID3D11Buffer* bufferArray[] = { constantBuffer.Get() };
-		//context->VSSetConstantBuffers(0, 1, bufferArray);
-
-
-		//context->IASetInputLayout(inputLayout.Get());
-
-		//
-
-		//context->PSSetShaderResources(0, 1, textureView.put());
-		//context->PSSetSamplers(0, 1, sampler.put());
-
-		//context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	void Graphics::Init(HWND hWnd) {
+
+		CreateScene();
 
 		scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, 64, 64);
 
@@ -368,162 +317,46 @@ namespace CubeRenderer {
 		// Right leg
 		scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, 64, 64);
 
-		HRESULT hr;
-
-		/*D3D_FEATURE_LEVEL featureLevels[] = {
-			D3D_FEATURE_LEVEL_12_2,
-			D3D_FEATURE_LEVEL_12_1,
-			D3D_FEATURE_LEVEL_12_0,
-			D3D_FEATURE_LEVEL_11_1,
-			D3D_FEATURE_LEVEL_11_0,
-			D3D_FEATURE_LEVEL_10_1,
-			D3D_FEATURE_LEVEL_10_0,
-			D3D_FEATURE_LEVEL_9_3,
-			D3D_FEATURE_LEVEL_9_2,
-			D3D_FEATURE_LEVEL_9_1
-		};
-
-		DXGI_SWAP_CHAIN_DESC sd = {};
-		sd.BufferDesc.Width = 0;
-		sd.BufferDesc.Height = 0;
-		sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		sd.BufferDesc.RefreshRate.Numerator = 0;
-		sd.BufferDesc.RefreshRate.Denominator = 0;
-		sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-		sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		sd.SampleDesc.Count = 1;
-		sd.SampleDesc.Quality = 0;
-		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		sd.BufferCount = 1;
-		sd.OutputWindow = hWnd;
-
-
-		sd.Windowed = TRUE;
-		sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-
-		hr = D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, NULL, &context);*/
-
 		CreateDeviceAndSwapChain(hWnd);
 
 		InitializeBlendState();
 
 		CreateRenderTarget();
 
-		/*ID3D11Resource* pBackBuffer = NULL;
-		hr = swapChain->GetBuffer(0, __uuidof(ID3D11Resource), reinterpret_cast<void**>(&pBackBuffer));
-
-		hr = device->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView);
-		pBackBuffer->Release();
-
-		D3D11_BUFFER_DESC cbd = {};
-		cbd.ByteWidth = sizeof(ConstantBuffer);
-		cbd.Usage = D3D11_USAGE_DYNAMIC;
-		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		hr = device->CreateBuffer(&cbd, nullptr, &constantBuffer);*/
-
-		
-
 		UpdateViewport(hWnd);
 
-		// Load the texture
-		/*std::wstring texturePath = GetExecutableDirectory() / L"steve.png";
-		hr = LoadTextureFromPNG(device.Get(), texturePath);*/
+		CreatePixelShader();
+		CreateVertexShader();
 
-		D3D11_SAMPLER_DESC sampDesc = {};
-		sampDesc.Filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT; // Use linear filtering for smoother textures
-		//sampDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		sampDesc.MinLOD = 0;
-		sampDesc.MaxLOD = 0/*D3D11_FLOAT32_MAX*/;
-
-		hr = device->CreateSamplerState(&sampDesc, &sampler);
-		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
-
-		D3D11_RASTERIZER_DESC rasterDesc = {};
-		rasterDesc.FillMode = D3D11_FILL_SOLID;
-		rasterDesc.CullMode = D3D11_CULL_BACK;  // Culling back faces
-		rasterDesc.FrontCounterClockwise = false;  // Set this to true if your front faces are counter-clockwise
-		rasterDesc.DepthBias = 0;
-		rasterDesc.SlopeScaledDepthBias = 0.0f;
-		rasterDesc.DepthBiasClamp = 0.0f;
-		rasterDesc.MultisampleEnable = false;
-		rasterDesc.AntialiasedLineEnable = true;
-
-		ID3D11RasterizerState* pRasterizerState = nullptr;
-		hr = device->CreateRasterizerState(&rasterDesc, &pRasterizerState);
-
-		context->RSSetState(pRasterizerState);
-
-
-
-
-		ComPtr<ID3DBlob> pBlob;
-
-		ComPtr<ID3D11PixelShader> pPixelShader;
-		std::wstring fullPathPS = GetExecutableDirectory() / L"PixelShader.cso";
-		hr = D3DReadFileToBlob(fullPathPS.c_str(), &pBlob);
-
-		hr = device->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, &pPixelShader);
-
-		context->PSSetShader(pPixelShader.Get(), nullptr, 0);
-
-		ComPtr<ID3D11VertexShader> pVertexShader;
-		std::wstring fullPath = GetExecutableDirectory() / L"VertexShader.cso";
-		hr = D3DReadFileToBlob(fullPath.c_str(), &vertexShaderBlob);
-
-		hr = device->CreateVertexShader(vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), NULL, &pVertexShader);
-
-		context->VSSetShader(pVertexShader.Get(), nullptr, 0);
-
-		context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
-
-		D3D11_INPUT_ELEMENT_DESC layout[] = {
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXTURECOORDINATE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Vertex, textureCoordinate), D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		};
-
-		ComPtr<ID3D11InputLayout> pInputLayout;
-
-		hr = device->CreateInputLayout(layout, std::size(layout), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &pInputLayout);
-
-		context->IASetInputLayout(pInputLayout.Get());
-
-		auto vertices = scene->GetVertices();
-		auto verticesSize = scene->GetVerticesSize();
-		auto indices = scene->GetIndices();
-		auto indicesSize = scene->GetIndicesSize();
-		SetVertexBuffer(vertices, verticesSize);
-		SetIndexBuffer(indices, indicesSize);
+		CreateInputLayout();
+		
+		UpdateScene();
 
 		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
 
 		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		//CreateDeviceAndSwapChain(hWnd);
-		//CreateRenderTarget();
-		//UpdateViewport(1000, 1000); // Initial size
-
-		//CreateVertexShader();
-		//CreatePixelShader();
-		//CreateInputLayout();
-		//CreateTriangle();
-
-		//// Set up initial rendering state
-		//ID3D11RenderTargetView* rtv = RenderTargetView.Get();
-		//context->OMSetRenderTargets(1, &rtv, nullptr);
-		//context->IASetInputLayout(inputLayout.Get());
 	}
 
-	void Graphics::CreateScene() {
+	void Graphics::SetScene(std::unique_ptr<Scene> newScene) {
+		scene = std::move(newScene);
+		UpdateScene();
+	}
+
+	void Graphics::UpdateScene() {
+		if (scene) {
+			auto vertices = scene->GetVertices();
+			auto verticesSize = scene->GetVerticesSize();
+			auto indices = scene->GetIndices();
+			auto indicesSize = scene->GetIndicesSize();
+			SetVertexBuffer(vertices, verticesSize);
+			SetIndexBuffer(indices, indicesSize);
+		}
+	}
+
+	Scene *Graphics::CreateScene() {
 		scene = std::make_unique<Scene>();
+		return GetScene();
 	}
 
 	void Graphics::SetVertexBuffer(Vertex* vertices, size_t size) {
@@ -598,44 +431,55 @@ namespace CubeRenderer {
 		depthDesc.Usage = D3D11_USAGE_DEFAULT;
 		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-		ThrowIfFailed(device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer));
+		device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer);
 
-		// 2. Create depth stencil view
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = depthDesc.Format;
-
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView));
+		device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView);
 
-		// 3. Create depth stencil state
 		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-		dsDesc.DepthEnable = FALSE;
+		dsDesc.DepthEnable = TRUE;
 		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-		ThrowIfFailed(device->CreateDepthStencilState(&dsDesc, &depthStencilState));
+		device->CreateDepthStencilState(&dsDesc, &depthStencilState);
 
-		D3D11_VIEWPORT vp;
-		vp.TopLeftX = 0;
-		vp.TopLeftY = 0;
-		vp.Width = width;
-		vp.Height = height;
-		vp.MinDepth = 0.0f;
-		vp.MaxDepth = 1.0f;
-		context->RSSetViewports(1, &vp);
+		D3D11_VIEWPORT viewport;
+		viewport.TopLeftX = 0;
+		viewport.TopLeftY = 0;
+		viewport.Width = width;
+		viewport.Height = height;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		context->RSSetViewports(1, &viewport);
 
 		projectionMatrix = XMMatrixPerspectiveFovLH(XM_PIDIV4, aspectRatio, 0.1f, 500.0f);
+
+		viewMatrix = XMMatrixTranslation(0.0f, 0.0f, 100.0f);
+	}
+
+	void Graphics::UpdateViewport(HWND hWnd) {
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+
+		UpdateViewport(rect.right - rect.left, rect.bottom - rect.top);
+	}
+
+	void Graphics::Clear() {
+		const float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+		context->ClearRenderTargetView(renderTargetView.Get(), color);
+		if (depthStencilView)
+			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
 	void Graphics::Render(float angle, float x, float y, float z) {
 
 		Clear();
 
-		const ConstantBuffer cb = {
-		{
+		const ConstantBuffer cb = {{
 			XMMatrixTranspose(
 				XMMatrixRotationZ(z) *
 				XMMatrixRotationY(x) *
@@ -643,8 +487,7 @@ namespace CubeRenderer {
 				XMMatrixTranslation(x, -y, 0) *
 				viewMatrix * projectionMatrix
 			)
-		}
-		};
+		}};
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -656,95 +499,14 @@ namespace CubeRenderer {
 		int indexCount = scene->GetIndicesSize() / sizeof(unsigned short);
 		context->DrawIndexed(indexCount, 0, 0);
 
-		swapChain->Present(1, 0);
+		Present();
 	}
-
-	void Graphics::UpdateViewport(HWND hWnd) {
-		RECT rect;
-		GetClientRect(hWnd, &rect);  // Use client size, not window size
-
-		//AdjustWindowRectExForDpi(&rect, )
-
-		float width = static_cast<float>(rect.right - rect.left);
-		float height = static_cast<float>(rect.bottom - rect.top);
-		float aspectRatio = width / height;
-
-		// Depth map stuff
-		D3D11_TEXTURE2D_DESC depthDesc = {};
-
-		depthDesc.Width = width;
-		depthDesc.Height = height;
-
-		depthDesc.MipLevels = 1;
-		depthDesc.ArraySize = 1;
-		depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthDesc.SampleDesc.Count = 1;
-		depthDesc.Usage = D3D11_USAGE_DEFAULT;
-		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-		device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer);
-
-		// 2. Create depth stencil view
-		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = depthDesc.Format;
-
-		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-
-		dsvDesc.Texture2D.MipSlice = 0;
-
-		device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView);
-
-		// 3. Create depth stencil state
-		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-		dsDesc.DepthEnable = TRUE;
-		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-		device->CreateDepthStencilState(&dsDesc, &depthStencilState);
-
-
-
-
-		D3D11_VIEWPORT vp;
-		vp.TopLeftX = 0;
-		vp.TopLeftY = 0;
-		vp.Width = width;
-		vp.Height = height;
-		vp.MinDepth = 0.0f;
-		vp.MaxDepth = 1.0f;
-		context->RSSetViewports(1, &vp);
-
-		projectionMatrix = XMMatrixPerspectiveFovLH(XM_PIDIV4, aspectRatio, 0.1f, 500.0f);
-
-		viewMatrix = XMMatrixTranslation(0.0f, 0.0f, 100.0f);
-	}
-
-	void Graphics::Clear() {
-		const float color[] = { 1.0f, 1.0f, 0.0f, 0.0f };
-		context->ClearRenderTargetView(renderTargetView.Get(), color);
-		context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	}
-
-
 
 	void Graphics::Present() {
-		//ThrowIfFailed(swapChain->Present(1, 0));
+		ThrowIfFailed(swapChain->Present(1, 0));
 	}
 
-	void Graphics::SetScene(std::unique_ptr<Scene> scene)
-	{
-		this->scene = std::move(scene);
-
-		auto indices = this->scene->GetIndices();
-		auto vertices = this->scene->GetVertices();
-		size_t verticesSize = this->scene->GetVerticesSize();
-		size_t indicesSize = this->scene->GetIndicesSize();
-		SetVertexBuffer(vertices, verticesSize);
-		SetIndexBuffer(indices, indicesSize);
-	}
-
-	Scene* Graphics::GetScene()
-	{
+	Scene* Graphics::GetScene() {
 		return scene.get();
 	}
 
@@ -778,6 +540,7 @@ namespace CubeRenderer {
 		if (pBitmap == nullptr || pBitmap->GetLastStatus() != Gdiplus::Ok) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 			ThrowIfFailed(E_FAIL);
+			return;
 		}
 
 		UINT width = pBitmap->GetWidth();

@@ -136,7 +136,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		    graphics->Init(hWnd);
             //graphics->GetScene()->AddCube(100.0f, 100.0f, 100, 0, 0, 0, 0, 0, 10, 10);
 
-            graphics->Render(3.0f, -3.0f, -2.0f, 0.0f);
+            graphics->Render(10.0f, -3.0f, -2.0f, 0.0f);
         }
         break;
     case WM_COMMAND:

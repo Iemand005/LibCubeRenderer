@@ -66,9 +66,10 @@ namespace CubeRenderer {
 
 		void Resize(UINT width, UINT height);
 
-		void CreateScene();
+		Scene *CreateScene();
 		void SetScene(std::unique_ptr<Scene> scene);
 		Scene* GetScene();
+		void UpdateScene();
 
 		void InitializeBlendState();
 
