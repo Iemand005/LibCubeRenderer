@@ -51,8 +51,8 @@ namespace CubeRenderer {
 
 
 #ifdef _DEBUG
-		//ComPtr<ID3D11Debug> debug = device 
-		////ComPtr<ID3D11InfoQueue> infoQueue = debug.as<ID3D11InfoQueue>();
+		//wrl::ComPtr<ID3D11Debug> debug = device 
+		////wrl::ComPtr<ID3D11InfoQueue> infoQueue = debug.as<ID3D11InfoQueue>();
 
 		//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 		//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
@@ -71,7 +71,7 @@ namespace CubeRenderer {
 
 	void Graphics::CreateSwapChain() {
 
-		/*ComPtr<IDXGIFactory2> factory;
+		/*wrl::ComPtr<IDXGIFactory2> factory;
 		ThrowIfFailed(CreateDXGIFactory1(__uuidof(IDXGIFactory2), factory.put_void()));*/
 		//IDXGIDevice* dxgiDevice = device->QueryInterface();
 
@@ -90,13 +90,13 @@ namespace CubeRenderer {
 		swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
 		swapChainDesc.Flags = 0;
 
-		ComPtr<IDXGIAdapter1> dxgiAdapter;
+		wrl::ComPtr<IDXGIAdapter1> dxgiAdapter;
 		dxgiDevice->GetParent(__uuidof(IDXGIAdapter1), &dxgiAdapter);
 
-		ComPtr<IDXGIFactory2> dxgiFactory2;
+		wrl::ComPtr<IDXGIFactory2> dxgiFactory2;
 		dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), &dxgiFactory2);
 
-		ComPtr<IDXGISwapChain1> swapChain1;
+		wrl::ComPtr<IDXGISwapChain1> swapChain1;
 		swapChain.As<IDXGISwapChain1>(&swapChain1);
 		ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc, nullptr, &swapChain1));
 	}
@@ -137,14 +137,14 @@ namespace CubeRenderer {
 #endif
 
 		//IDXGISwapChain* swapChain;
-		//ComPtr<IDXGISwapChain> swapChainOld;
+		//wrl::ComPtr<IDXGISwapChain> swapChainOld;
 		ThrowIfFailed(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, nullptr, &context));
 		//swapChain.As<IDXGISwapChain>(&swapChainOld);
 
 #ifdef _DEBUG
-		ComPtr<ID3D11Debug> debug;
+		wrl::ComPtr<ID3D11Debug> debug;
 		device.As<ID3D11Debug>(&debug);
-		ComPtr<ID3D11InfoQueue> infoQueue;
+		wrl::ComPtr<ID3D11InfoQueue> infoQueue;
 		debug.As<ID3D11InfoQueue>(&infoQueue);
 
 		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -328,7 +328,7 @@ namespace CubeRenderer {
 
 		//UpdateViewport(1000, 1000);*/
 
-		//ComPtr<ID3DBlob> pBlob;
+		//wrl::ComPtr<ID3DBlob> pBlob;
 
 		//ID3D11Buffer* bufferArray[] = { constantBuffer.Get() };
 		//context->VSSetConstantBuffers(0, 1, bufferArray);
@@ -517,9 +517,9 @@ namespace CubeRenderer {
 
 
 
-		ComPtr<ID3DBlob> pBlob;
+		wrl::ComPtr<ID3DBlob> pBlob;
 
-		ComPtr<ID3D11PixelShader> pPixelShader;
+		wrl::ComPtr<ID3D11PixelShader> pPixelShader;
 		std::wstring fullPathPS = GetExecutableDirectory() / L"PixelShader.cso";
 		hr = D3DReadFileToBlob(fullPathPS.c_str(), &pBlob);
 
@@ -527,7 +527,7 @@ namespace CubeRenderer {
 
 		context->PSSetShader(pPixelShader.Get(), nullptr, 0);
 
-		ComPtr<ID3D11VertexShader> pVertexShader;
+		wrl::ComPtr<ID3D11VertexShader> pVertexShader;
 		std::wstring fullPath = GetExecutableDirectory() / L"VertexShader.cso";
 		hr = D3DReadFileToBlob(fullPath.c_str(), &vertexShaderBlob);
 
@@ -542,7 +542,7 @@ namespace CubeRenderer {
 		{ "TEXTURECOORDINATE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Vertex, textureCoordinate), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
-		ComPtr<ID3D11InputLayout> pInputLayout;
+		wrl::ComPtr<ID3D11InputLayout> pInputLayout;
 
 		hr = device->CreateInputLayout(layout, std::size(layout), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &pInputLayout);
 
@@ -625,7 +625,7 @@ namespace CubeRenderer {
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
 
-		ComPtr<ID3D11Resource> backBuffer;
+		wrl::ComPtr<ID3D11Resource> backBuffer;
 		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL, &renderTargetView));
 
@@ -685,85 +685,7 @@ namespace CubeRenderer {
 
 	void Graphics::Render(float angle, float x, float y, float z) {
 
-		//float clearColor[4] = { 1.0f, 0, 0.0f, 0 }; // Red
-		//context->ClearRenderTargetView(renderTargetView.Get(), clearColor);
-
-		//ComPtr<ID3D11Buffer> pVertexBuffer;
-		//D3D11_BUFFER_DESC bd = {};
-		//D3D11_SUBRESOURCE_DATA sd = {};
-
-		//struct Vertex {
-		//	float x, y;
-		//};
-
-		//struct Vertex vertices[] =
-		//{
-		//	{0.0f, 2.0f},
-		//	{ 2.5f, -2.5f },
-		//	{-2.5f, -2.5f},
-		//};
-
-		//bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		//bd.Usage = D3D11_USAGE_DEFAULT;
-		//bd.CPUAccessFlags = 0u;
-		//bd.MiscFlags = 0u;
-		//bd.ByteWidth = sizeof(vertices);
-		//bd.StructureByteStride = sizeof(Vertex);
-		////D3D11_SUBRESOURCE_DATA sd = {};
-		//sd.pSysMem = vertices;
-
-		//const UINT stride = sizeof(Vertex);
-		//const UINT offset = 0;
-
-		//ComPtr<ID3D11VertexShader> pVertexShader;
-		//ComPtr<ID3DBlob> pBlob;
-
-		//std::wstring fullPath = GetExecutableDirectory() / L"VertexShader.cso";
-		//auto hr = D3DReadFileToBlob(fullPath.c_str(), &pBlob);
-
-		//device->CreateBuffer(&bd, &sd, &pVertexBuffer);
-
-		//ID3D11Buffer* vertexBuffer = pVertexBuffer.Get();
-		//context->IASetVertexBuffers(0u, 1u, &vertexBuffer, &stride, &offset);
-		//device->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, &pVertexShader);
-
-		//context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		///*ID3D11InputLayout* inputLayout;
-
-		//D3D11_INPUT_ELEMENT_DESC layout[] = {
-		//{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		//{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		//};
-
-		//device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &inputLayout);*/
-		//ID3D11RenderTargetView* rtv = renderTargetView.Get();
-		//context->OMSetRenderTargets(1, &rtv, nullptr);
-
-		//context->IASetInputLayout(inputLayout.Get());
-
-		//D3D11_VIEWPORT viewport;
-
-		//// Set viewport dimensions
-		//viewport.TopLeftX = 0.0f;
-		//viewport.TopLeftY = 0.0f;
-		//viewport.Width = 100;
-		//viewport.Height = 100;
-
-		//// Standard depth range
-		//viewport.MinDepth = 0.0f;
-		//viewport.MaxDepth = 1.0f;
-
-		//// Bind the viewport
-		//context->RSSetViewports(1, &viewport);
-
-		////dxgiSurface->
-
-		//context->Draw(std::size(vertices), 0);
-
-		const float color[] = { 0.0f, 1.0f, 0.0f, 0.0f };
-		context->ClearRenderTargetView(renderTargetView.Get(), color);
-		context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		Clear();
 
 		const ConstantBuffer cb = {
 		{
@@ -849,9 +771,9 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Clear() {
-		//float clearColor[4] = { 1.0f, 0, 0.0f, 0 }; // Red
-		//context->ClearRenderTargetView(RenderTargetView.Get(), clearColor);
-		//context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		const float color[] = { 1.0f, 1.0f, 0.0f, 0.0f };
+		context->ClearRenderTargetView(renderTargetView.Get(), color);
+		context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
 

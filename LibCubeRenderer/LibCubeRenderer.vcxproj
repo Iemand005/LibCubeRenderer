@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="GraphicsPrivate.h" />
     <ClInclude Include="include\Base.h" />
     <ClInclude Include="include\CubeRenderer.h" />
     <ClInclude Include="include\Graphics.h" />
