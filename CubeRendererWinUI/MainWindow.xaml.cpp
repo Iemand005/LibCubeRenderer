@@ -30,8 +30,11 @@ namespace winrt::CubeRendererWinUI::implementation
             OutputDebugString(TEXT("Oops"));
         };
 
-        Scene* scene = graphics->CreateScene();
+        //Scene* scene = graphics->CreateScene();
 
+
+        Scene* scene = graphics->Init();
+        
         scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, 64, 64);
 
         // Waist
@@ -48,9 +51,8 @@ namespace winrt::CubeRendererWinUI::implementation
 
         // Right leg
         scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, 64, 64);
-
-		graphics->Init();
-		graphics->LoadTexture(GetExecutableDirectory() / L"steve.png");
+		
+        graphics->LoadTexture(GetExecutableDirectory() / L"steve.png");
 
 		auto swapChainPanel = this->SwapChainPanel();
         IDXGISwapChain *swapChain = graphics->GetSwapChain();

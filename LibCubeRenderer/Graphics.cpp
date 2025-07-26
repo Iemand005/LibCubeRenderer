@@ -410,10 +410,6 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Render(float angle, float x, float y, float z) {
-		
-		int indexCount = scene->GetIndicesSize() / sizeof(unsigned short);
-
-		if (!indexCount) return;
 
 		Clear();
 
@@ -434,17 +430,8 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
-		try {
-
-			context->DrawIndexed(indexCount, 0, 0);
-		}
-		catch (const std::exception& e) {
-
-			//if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-			//	// Handle device lost
-			//	HandleDeviceLost();
-			//}
-		}
+		int indexCount = scene->GetIndexCount();
+		context->DrawIndexed(indexCount, 0, 0);
 
 		Present();
 	}
