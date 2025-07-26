@@ -67,7 +67,21 @@ namespace CubeRenderer {
 			swapChainDesc1.Scaling = DXGI_SCALING_ASPECT_RATIO_STRETCH;
 			swapChainDesc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 			swapChainDesc1.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-			swapChainDesc1.Flags = swapChainFlags;
+			//swapChainDesc1.Flags = swapChainFlags;
+
+			DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
+			swapChainDesc.Width = 1000; // Match the size of the window.
+			swapChainDesc.Height = 1000;
+			swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // most common
+			swapChainDesc.Stereo = FALSE;
+			swapChainDesc.SampleDesc.Count = 1;
+			swapChainDesc.SampleDesc.Quality = 0;
+			swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+			swapChainDesc.BufferCount = 2;  // double buffering
+			swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+			swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+			swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+			swapChainDesc.Flags = swapChainFlags;
 			
 
 			ComPtr<IDXGIAdapter1> dxgiAdapter;
@@ -77,7 +91,7 @@ namespace CubeRenderer {
 			dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
 
 			ComPtr<IDXGISwapChain1> swapChain1;
-			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc1, nullptr, &swapChain1));
+			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc, nullptr, &swapChain1));
 			swapChain1.As<IDXGISwapChain>(&swapChain);
 		}
 		else {
@@ -290,6 +304,7 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::SetIndexBuffer(unsigned short* indices, size_t size) {
+		if (!indices) return;
 		indexBuffer = nullptr;
 
 		D3D11_BUFFER_DESC indexBufferDescription = {};
@@ -315,12 +330,14 @@ namespace CubeRenderer {
 		depthStencilView.Reset();
 		context->Flush();
 
-		UINT flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+		//UINT flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
 		DXGI_SWAP_CHAIN_DESC desc;
 		ThrowIfFailed(swapChain->GetDesc(&desc));
+		UINT flags = desc.Flags;
+		DXGI_FORMAT format = desc.BufferDesc.Format;
 
-		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, flags));
+		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, format, flags));
 
 		ComPtr<ID3D11Resource> backBuffer;
 		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
@@ -393,6 +410,10 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Render(float angle, float x, float y, float z) {
+		
+		int indexCount = scene->GetIndicesSize() / sizeof(unsigned short);
+
+		if (!indexCount) return;
 
 		Clear();
 
@@ -413,7 +434,7 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
-		int indexCount = scene->GetIndicesSize() / sizeof(unsigned short);
+
 		context->DrawIndexed(indexCount, 0, 0);
 
 		Present();
