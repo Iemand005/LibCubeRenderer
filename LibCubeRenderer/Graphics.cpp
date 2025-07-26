@@ -235,7 +235,7 @@ namespace CubeRenderer {
 
 	Scene* Graphics::Init(HWND hWnd) {
 
-		Scene *scene = CreateScene();
+		Scene *scene = this->scene ? this->scene.get() : CreateScene();
 
 		CreateDeviceAndSwapChain(hWnd);
 
@@ -334,10 +334,10 @@ namespace CubeRenderer {
 
 		DXGI_SWAP_CHAIN_DESC desc;
 		ThrowIfFailed(swapChain->GetDesc(&desc));
-		UINT flags = desc.Flags;
+		//UINT flags = desc.Flags;
 		DXGI_FORMAT format = desc.BufferDesc.Format;
 
-		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, format, flags));
+		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, format, 0));
 
 		ComPtr<ID3D11Resource> backBuffer;
 		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
@@ -434,8 +434,17 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
+		try {
 
-		context->DrawIndexed(indexCount, 0, 0);
+			context->DrawIndexed(indexCount, 0, 0);
+		}
+		catch (const std::exception& e) {
+
+			//if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+			//	// Handle device lost
+			//	HandleDeviceLost();
+			//}
+		}
 
 		Present();
 	}
