@@ -13,7 +13,7 @@
     </Window.SystemBackdrop>
 
     <Grid>
-        <SwapChainPanel Name="SwapChainPanel" Width="500" Height="500" Margin="0,31,0,0" Loaded="SwapChainPanel_Loaded" SizeChanged="SwapChainPanel_SizeChanged"></SwapChainPanel>
+        <SwapChainPanel Name="SwapChainPanel" Width="100" Height="500" Loaded="SwapChainPanel_Loaded" SizeChanged="SwapChainPanel_SizeChanged"></SwapChainPanel>
         
         
         <!--<Rectangle Height="200" Width="200"  Fill="Blue" Stroke="Red"></Rectangle>-->

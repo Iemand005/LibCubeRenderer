@@ -42,7 +42,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
     IDXGIDevice* dxgiDevice;
 
-    DispatcherTimer timer;
+    //DispatcherTimer timer;
 
     //ID2D1DeviceContext* d2dContext;
     
@@ -260,7 +260,7 @@ namespace winrt::CubeRendererWinUI::implementation
     void MainWindow::SwapChainPanel_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
     {
         CreateSwapChain();
-        timer.Start();
+        //timer.Start();
     }
 
     int32_t MainWindow::MyProperty()
