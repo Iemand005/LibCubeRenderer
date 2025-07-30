@@ -18,8 +18,11 @@ namespace winrt::CubeRendererWinUI::implementation
 
         void InitializeDirectX();
         void CreateSwapChain();
+        void ResizeSwapChain(UINT width, UINT height);
+        void Draw();
         //void OnLoaded(IInspectable const&, RoutedEventArgs const&);
         void SwapChainPanel_Loaded(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::RoutedEventArgs const& e);
+        void SwapChainPanel_SizeChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::SizeChangedEventArgs const& e);
     };
 }
 

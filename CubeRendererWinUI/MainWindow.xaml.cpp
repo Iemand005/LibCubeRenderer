@@ -9,6 +9,10 @@
 #include <microsoft.ui.xaml.media.dxinterop.h>
 #include <microsoft.ui.xaml.window.h>
 
+#include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Microsoft.UI.Dispatching.h>
+
 #include <d2d1_1.h>
 #pragma comment(lib, "d2d1.lib")
 
@@ -22,7 +26,7 @@ namespace winrt::CubeRendererWinUI::implementation
     using namespace CubeRenderer;
     using namespace DirectX;
 
-    IDXGISurface* dxgiBackBuffer;
+    //IDXGISurface* dxgiBackBuffer;
     ID2D1Factory1* d2dFactory;
     ID2D1Device* d2dDevice;
     ID2D1DeviceContext* d2dContext;
@@ -32,8 +36,14 @@ namespace winrt::CubeRendererWinUI::implementation
 
 
     ID3D11Device* device;
+    ID3D11Texture2D* backBuffer;
+    IDXGISwapChain1* swapChain;
+    IDXGISurface* dxgiBackBuffer;
 
     IDXGIDevice* dxgiDevice;
+
+    DispatcherTimer timer;
+
     //ID2D1DeviceContext* d2dContext;
     
     void MainWindow::InitializeDirectX() {
@@ -81,16 +91,13 @@ namespace winrt::CubeRendererWinUI::implementation
         IDXGIFactory2* dxgiFactory2;
         dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
 
-        IDXGISwapChain1* swapChain;
 
         // resize window flick bug
         HRESULT hr = dxgiFactory2->CreateSwapChainForComposition(device, &swapChainDesc, NULL, &swapChain);
 
-        ID3D11Texture2D* backBuffer;
         swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
         // renderTargetView = device.CreateRenderTargetView(backBuffer);
 
-        IDXGISurface* dxgiBackBuffer;
         backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
 
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
@@ -120,6 +127,10 @@ namespace winrt::CubeRendererWinUI::implementation
 
         dxgiDevice->Release();
 
+        Draw();
+    }
+
+    void MainWindow::Draw() {
         d2dContext->BeginDraw();
 
         d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
@@ -132,6 +143,34 @@ namespace winrt::CubeRendererWinUI::implementation
 
         d2dContext->EndDraw();
         swapChain->Present(1, 0);
+    }
+
+    void MainWindow::ResizeSwapChain(UINT width, UINT height)
+    {
+        if (!d2dContext) return;
+
+        d2dContext->SetTarget(NULL);
+
+        backBuffer->Release();
+        dxgiBackBuffer->Release();
+        d2dTargetBitmap1->Release();
+
+        swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+        swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+
+        backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
+
+        auto bitmapProperties = D2D1::BitmapProperties1(
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(
+                DXGI_FORMAT_B8G8R8A8_UNORM,
+                D2D1_ALPHA_MODE_PREMULTIPLIED), 144, 144);
+
+        d2dContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer, bitmapProperties, &d2dTargetBitmap1);
+        d2dContext->SetTarget(d2dTargetBitmap1);
+
+        Draw();
     }
 
     /*void MainWindow::OnLoaded(IInspectable const&, RoutedEventArgs const&)
@@ -195,49 +234,23 @@ namespace winrt::CubeRendererWinUI::implementation
    //         IDXGISwapChain* swapChain = graphics->GetSwapChain();
    //         auto nativePanel = swapChainPanel.as<ISwapChainPanelNative>();
 
+   //         timer = DispatcherTimer();
+			//timer.Tick([this](auto&&...) {
+
+   //             auto dispatcher = winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread();
+
+   //             // When you need to update UI from another thread:
+   //             dispatcher.TryEnqueue([this](auto&&...) {
+   //                 // Safe to update UI here
+   //                 //Draw();
+   //                 });
+   //            
+   //             });;
+   //         timer.Interval(std::chrono::milliseconds(16));
+
             InitializeDirectX();
-            
 
-            /*SwapChainPanel().Loaded([this](IInspectable const&, RoutedEventArgs const&) {
-                try {
-                    CreateSwapChain();
-                }
-                catch (const runtime_error& e) {
-                    OutputDebugStringA(e.what());
-                }});*/
-                //try {
 
-                //    auto swapChainPanel = SwapChainPanel();
-                //    auto nativePanel = swapChainPanel.as<ISwapChainPanelNative>();
-
-                //    
-
-                //    swapChainPanel.SizeChanged([swapChain](IInspectable const&, SizeChangedEventArgs const& e) {
-                //        try {
-                //            /*auto size = e.NewSize();
-                //            graphics->Resize(size.Width, size.Height);*/
-                //            //graphics->Render(1.0f, -3.0f, -2.0f, 0.0f);
-                //            d2dContext->BeginDraw();
-
-                //            d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
-
-                //            d2dContext->DrawLine(
-                //                D2D1::Point2F(0.0f, 0.0f),
-                //                D2D1::Point2F(100.0f, 100.0f),
-                //                d2dbrush,
-                //                1.0f);
-
-                //            d2dContext->EndDraw();
-                //            swapChain->Present(1, 0);
-                //        }
-                //        catch (const runtime_error& e) {
-
-                //        }
-                //        });
-                //}
-                //catch (const hresult_error& e) {
-                //    OutputDebugString(e.message().c_str());
-                //}
         }
         catch (const runtime_error& e) {
 
@@ -247,6 +260,7 @@ namespace winrt::CubeRendererWinUI::implementation
     void MainWindow::SwapChainPanel_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
     {
         CreateSwapChain();
+        timer.Start();
     }
 
     int32_t MainWindow::MyProperty()
@@ -261,3 +275,9 @@ namespace winrt::CubeRendererWinUI::implementation
 }
 
 
+
+void winrt::CubeRendererWinUI::implementation::MainWindow::SwapChainPanel_SizeChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Microsoft::UI::Xaml::SizeChangedEventArgs const& e)
+{
+	auto newSize = e.NewSize();
+	ResizeSwapChain(static_cast<UINT>(newSize.Width), static_cast<UINT>(newSize.Height));
+}
