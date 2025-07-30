@@ -624,7 +624,12 @@ namespace CubeRenderer {
 	ID2D1Bitmap1* Graphics::RenderToBitmap() {
 
 		ID3D11Texture2D* backBuffer;
-		swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);
+
+		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
+
+		if (antiAliasing) {
+			context->ResolveSubresource(backBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+		}
 
 		// 2. Create compatible texture
 		D3D11_TEXTURE2D_DESC texDesc = {};
@@ -659,5 +664,9 @@ namespace CubeRenderer {
 		backBuffer->Release();
 
 		return bitmap;
+	}
+
+	void Graphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, PWCHAR fileName) {
+
 	}
 }

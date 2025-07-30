@@ -88,6 +88,8 @@ namespace CubeRenderer {
 
 		ID2D1Bitmap1* RenderToBitmap();
 
+		void SaveBitmapToFile(ID2D1Bitmap* bitmap, PWCHAR fileName);
+
 		function<VOID(HRESULT)> OnError;
 	private:
 		ComPtr<ID3D11Device> device;
