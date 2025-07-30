@@ -121,8 +121,8 @@ namespace winrt::CubeRendererWinUI::implementation
 			dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
 
             DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-            swapChainDesc.Width = 1;
-            swapChainDesc.Height = 1;
+            swapChainDesc.Width = 1000;
+            swapChainDesc.Height = 1000;
             swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // this is the most common swapchain format
             swapChainDesc.Stereo = false;
             swapChainDesc.SampleDesc.Count = 1;                // don't use multi-sampling
@@ -136,7 +136,6 @@ namespace winrt::CubeRendererWinUI::implementation
 			IDXGISwapChain1* swapChain1 = nullptr;
             dxgiFactory->CreateSwapChainForComposition(dxgiDevice, &swapChainDesc, NULL, &swapChain1);
 
-			nativePanel->SetSwapChain(swapChain1);
 
             //dxgiFactory
             D2D1_RENDER_TARGET_PROPERTIES renderTargetProperties = D2D1::RenderTargetProperties(
@@ -150,14 +149,63 @@ namespace winrt::CubeRendererWinUI::implementation
 			//d2dFactory->CreateDxgiSurfaceRenderTarget(swapChain1, &renderTargetProperties, &d2dRenderTarget);
             //d2dFactory->CreateDxgiSurfaceRenderTarget(dxgiSurface, &renderTargetProperties, &d2dRenderTarget);
 
-			d2dContext->CreateBitmapFromDxgiSurface()
+			ID3D11Texture2D* backBuffer = nullptr;
+			swapChain1->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
 
+			backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiSurface));
+
+			d2dContext->CreateBitmapFromDxgiSurface(dxgiSurface, 
+                D2D1::BitmapProperties1(
+                    D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+                    D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)),
+				&d2dTargetBitmap1);
+
+            ID2D1SolidColorBrush* d2dBrush;
+            d2dContext->CreateSolidColorBrush(D2D1::ColorF(1.0f, 0.0f, 1.0f, 1.0f), &d2dBrush);
 
 			d2dDevice->Release();
+			dxgiDevice->Release();
 
-            d2dRenderTarget->BeginDraw();
-            d2dRenderTarget->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
-            d2dRenderTarget->EndDraw();
+			d2dContext->SetTarget(d2dTargetBitmap1);
+
+
+            swapChainPanel.SizeChanged([graphics, swapChain1, d2dBrush](IInspectable const&, SizeChangedEventArgs const& e) {
+                try {
+                    /*auto size = e.NewSize();
+                    graphics->Resize(size.Width, size.Height);*/
+                    //graphics->Render(1.0f, -3.0f, -2.0f, 0.0f);
+                    d2dContext->BeginDraw();
+            
+                    d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
+
+			        d2dContext->DrawLine(
+                        D2D1::Point2F(0.0f, 0.0f),
+                        D2D1::Point2F(100.0f, 100.0f),
+                        d2dBrush,
+				        1.0f);
+
+                    d2dContext->EndDraw();
+                    swapChain1->Present(1, 0);
+                }
+                catch (const runtime_error& e) {
+
+                }
+                });
+
+            nativePanel->SetSwapChain(swapChain1);
+
+
+            d2dContext->BeginDraw();
+
+            d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
+
+            d2dContext->DrawLine(
+                D2D1::Point2F(0.0f, 0.0f),
+                D2D1::Point2F(100.0f, 100.0f),
+                d2dBrush,
+                1.0f);
+
+            d2dContext->EndDraw();
             swapChain1->Present(1, 0);
         }
         catch (const runtime_error& e) {
