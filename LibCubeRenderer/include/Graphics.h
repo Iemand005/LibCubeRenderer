@@ -55,6 +55,7 @@ namespace CubeRenderer {
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
 
 		void CreateRenderTarget();
+		void CreateDepthStencil();
 
 		void CreateVertexShader();
 		void CreatePixelShader();

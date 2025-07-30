@@ -379,21 +379,21 @@ namespace CubeRenderer {
 		UpdateViewport(width, height);
 	}
 
-	void Graphics::UpdateViewport(FLOAT width, FLOAT height) {
+	void Graphics::CreateDepthStencil() {
 
-		if (width == 0 || height == 0) return;
+		if (depthStencilBuffer) {
+			depthStencilBuffer.Reset();
+			depthStencilView.Reset();
+			depthStencilState.Reset();
+		}
 
 		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 		swapChain->GetDesc(&swapChainDesc);
-		
 
-		FLOAT aspectRatio = width / height;
-
-		// Depth map stuff
 		D3D11_TEXTURE2D_DESC depthDesc = {};
 
-		depthDesc.Width = width;
-		depthDesc.Height = height;
+		depthDesc.Width = swapChainDesc.BufferDesc.Width;
+		depthDesc.Height = swapChainDesc.BufferDesc.Height;
 
 		depthDesc.MipLevels = 1;
 		depthDesc.ArraySize = 1;
@@ -417,6 +417,15 @@ namespace CubeRenderer {
 		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
 		device->CreateDepthStencilState(&dsDesc, &depthStencilState);
+	}
+
+	void Graphics::UpdateViewport(FLOAT width, FLOAT height) {
+
+		if (width == 0 || height == 0) return;
+
+		CreateDepthStencil();
+
+		FLOAT aspectRatio = width / height;
 
 		D3D11_VIEWPORT viewport;
 		viewport.TopLeftX = 0;
