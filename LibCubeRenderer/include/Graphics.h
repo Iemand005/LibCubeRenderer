@@ -88,7 +88,7 @@ namespace CubeRenderer {
 
 		ID2D1Bitmap1* RenderToBitmap();
 
-		void SaveBitmapToFile(ID2D1Bitmap* bitmap, PWCHAR fileName);
+		void SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName);
 
 		function<VOID(HRESULT)> OnError;
 	private:
