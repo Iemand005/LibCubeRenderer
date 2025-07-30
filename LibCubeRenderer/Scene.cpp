@@ -10,8 +10,9 @@ namespace CubeRenderer {
 
     Vertex* Scene::CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, Texture* texture, size_t* sizeOut, UINT* countOut) {
 
-        UINT textureWidth = texture ? texture->GetWidth() : 64;
-        UINT textureHeight= texture ? texture->GetHeight() : 64;
+        UINT textureWidth = 64;
+        UINT textureHeight = 64;
+		if (texture) texture->GetDimensions(&textureWidth, &textureHeight);
 
         float left = -width / 2 + offsetX;
         float right = width / 2 + offsetX;
