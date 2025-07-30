@@ -405,7 +405,8 @@ namespace CubeRenderer {
 		if (width == 0 || height == 0) return;
 
 		context->OMSetRenderTargets(0, NULL, NULL);
-		renderTargetView = nullptr;
+		renderTargetView.Reset();
+		depthStencilView.Reset();
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
 
@@ -435,14 +436,14 @@ namespace CubeRenderer {
 		depthDesc.Usage = D3D11_USAGE_DEFAULT;
 		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-		device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer);
+		ThrowIfFailed(device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer));
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = depthDesc.Format;
 		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		dsvDesc.Texture2D.MipSlice = 0;
 
-		device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView);
+		ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView));
 
 		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 		dsDesc.DepthEnable = TRUE;
