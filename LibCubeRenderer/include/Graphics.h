@@ -54,7 +54,7 @@ namespace CubeRenderer {
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
 
-		void CreateRenderTarget(UINT sampleCount = 1, UINT sampleQuality = 0);
+		void CreateRenderTarget(UINT sampleCount = 8, UINT sampleQuality = 0);
 		void CreateDepthStencil();
 
 		void CreateVertexShader();
@@ -82,7 +82,7 @@ namespace CubeRenderer {
 
 		IDXGISwapChain* GetSwapChain();
 
-		function<void(HRESULT)> OnError;
+		function<VOID(HRESULT)> OnError;
 	private:
 		ComPtr<ID3D11Device> device;
 		ComPtr<IDXGIDevice> dxgiDevice;
@@ -119,8 +119,11 @@ namespace CubeRenderer {
 
 		INT indexCount;
 
-		bool antiAliasing = true;
-		int antiAliasingSamples = 8;
+		BOOL antiAliasing = TRUE;
+		DXGI_SAMPLE_DESC sampleDesc;
+
+		BOOL superSampling = FALSE;
+		INT scalingFactor = 2;
 
 		void UpdateViewport(FLOAT width, FLOAT height);
 

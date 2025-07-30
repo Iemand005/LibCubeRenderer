@@ -110,7 +110,7 @@ namespace CubeRenderer {
 			swapChain = nullptr;
 		}
 
-		DXGI_SWAP_CHAIN_DESC1 sd = { 0 };
+		DXGI_SWAP_CHAIN_DESC1 sd = {};
 		sd.Width = 1;
 		sd.Height = 1;
 		sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -118,11 +118,11 @@ namespace CubeRenderer {
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		sd.BufferCount = 2;  // double buffering
+		sd.BufferCount = 2;
 		sd.Scaling = DXGI_SCALING_STRETCH;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		sd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-		sd.Flags = 0;
+		sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
 		if (!window) {
 			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &sd, nullptr, &swapChain));
@@ -143,7 +143,6 @@ namespace CubeRenderer {
 
 		sampleCount = max(min(sampleCount, 8), 1);
 
-		antiAliasing = false;
 
 		if (sampleCount > 1)
 		{
@@ -152,42 +151,72 @@ namespace CubeRenderer {
 			UINT maxQuality = 0;
 			device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampleCount, &maxQuality);
 			if (maxQuality != 0) {
-				antiAliasing = true;
-
 				if (sampleQuality >= maxQuality)
-
-				sampleQuality = maxQuality - 1;
-
+					sampleQuality = maxQuality - 1;
 			} else sampleQuality = 0, sampleCount = 1;
 		}
-		else 
 
 		if (renderTargetView) {
 			renderTargetView.Reset();
 		}
 
+		sampleDesc.Count = sampleCount;
+		sampleDesc.Quality = sampleQuality; // or D3D11_STANDARD_MULTISAMPLE_PATTERN
+
+		antiAliasing = sampleDesc.Count > 1;
+
 		ID3D11Texture2D* backBuffer;
 
-		if (antiAliasing) {
+		if (antiAliasing || superSampling) {
 			DXGI_SWAP_CHAIN_DESC swapChainDesc;
 			swapChain->GetDesc(&swapChainDesc);
 
+			UINT width = swapChainDesc.BufferDesc.Width;
+			UINT height = swapChainDesc.BufferDesc.Height;
+
 			D3D11_TEXTURE2D_DESC texDesc = {};
-			texDesc.Width = swapChainDesc.BufferDesc.Width;
-			texDesc.Height = swapChainDesc.BufferDesc.Height;
+			texDesc.Width = width;
+			texDesc.Height = height;
 			texDesc.MipLevels = 1;
 			texDesc.ArraySize = 1;
 			texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-			texDesc.SampleDesc.Count = sampleCount;
-			texDesc.SampleDesc.Quality = sampleQuality; // or D3D11_STANDARD_MULTISAMPLE_PATTERN
+			texDesc.SampleDesc = sampleDesc;
 			texDesc.Usage = D3D11_USAGE_DEFAULT;
 			texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
-			ThrowIfFailed(device->CreateTexture2D(&texDesc, nullptr, &backBuffer));
+			if (superSampling) {
+				texDesc.Width *= scalingFactor;
+				texDesc.Height *= scalingFactor;
+			}
+
+			ThrowIfFailed(device->CreateTexture2D(&texDesc, NULL, &backBuffer));
+
+			if (superSampling) {
+				texDesc.Width = width;
+				texDesc.Height = height;
+				texDesc.SampleDesc.Count = 1;
+				texDesc.SampleDesc.Quality = 0;
+				texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+
+				ID3D11Texture2D* pResolveTexture = nullptr;
+				device->CreateTexture2D(&texDesc, nullptr, &pResolveTexture);
+			}
+
+			if (msaaTexture) {
+				msaaTexture->Release();
+				msaaTexture = nullptr;
+			}
+			msaaTexture = backBuffer;
 		} else ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 
-		ThrowIfFailed(device->CreateRenderTargetView(backBuffer, nullptr, &renderTargetView));
-		backBuffer->Release();
+
+		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+		rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+		ThrowIfFailed(device->CreateRenderTargetView(backBuffer, NULL, &renderTargetView));
+
+		if (!antiAliasing) backBuffer->Release();
 		
 
 		D3D11_BUFFER_DESC cbd = {};
@@ -196,7 +225,7 @@ namespace CubeRenderer {
 		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-		ThrowIfFailed(device->CreateBuffer(&cbd, nullptr, &constantBuffer));
+		ThrowIfFailed(device->CreateBuffer(&cbd, NULL, &constantBuffer));
 
 		context->VSSetConstantBuffers(0, 1, constantBuffer.GetAddressOf());
 
@@ -249,7 +278,7 @@ namespace CubeRenderer {
 		depthDesc.MipLevels = 1;
 		depthDesc.ArraySize = 1;
 		depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthDesc.SampleDesc = swapChainDesc.SampleDesc;
+		depthDesc.SampleDesc = sampleDesc;
 		depthDesc.Usage = D3D11_USAGE_DEFAULT;
 		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
@@ -257,7 +286,7 @@ namespace CubeRenderer {
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = depthDesc.Format;
-		dsvDesc.ViewDimension = swapChainDesc.SampleDesc.Count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.ViewDimension = antiAliasing ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 		dsvDesc.Texture2D.MipSlice = 0;
 
 		ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView));
@@ -438,7 +467,7 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Clear() {
-		const float color[] = { 0.0f, 0.0f, 0.0f, 0.1f };
+		const float color[] = { 0.0f, 1.0f, 0.0f, 0.1f };
 		context->ClearRenderTargetView(renderTargetView.Get(), color);
 		if (depthStencilView)
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -500,10 +529,10 @@ namespace CubeRenderer {
 		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-		ID3D11BlendState* pBlendState = nullptr;
-		ThrowIfFailed(device->CreateBlendState(&blendDesc, &pBlendState));
+		ID3D11BlendState* blendState = nullptr;
+		ThrowIfFailed(device->CreateBlendState(&blendDesc, &blendState));
 
-		context->OMSetBlendState(pBlendState, nullptr, 0xFFFFFFFF);
+		context->OMSetBlendState(blendState, nullptr, 0xFFFFFFFF);
 	}
 
 	IDXGISwapChain* Graphics::GetSwapChain() {
