@@ -96,7 +96,7 @@ namespace CubeRenderer {
 #endif
 	}
 
-	void Graphics::CreateSwapChain(HWND window, UINT sampleCount, UINT sampleQuality) {
+	void Graphics::CreateSwapChain(HWND window) {
 
 		ComPtr<IDXGIAdapter1> dxgiAdapter;
 		dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter));
@@ -110,31 +110,17 @@ namespace CubeRenderer {
 			swapChain = nullptr;
 		}
 
-		sampleCount = max(min(sampleCount, 8), 1);
-
-		if (sampleCount > 1)
-		{
-			if (sampleQuality == 0)
-				sampleQuality = sampleCount - 1;
-			UINT maxQuality = 0;
-			device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampleCount, &maxQuality);
-			if (maxQuality == 0 && sampleCount > 1)
-				sampleQuality = 0, sampleCount = 1;
-			else if (sampleQuality >= maxQuality)
-				sampleQuality = maxQuality - 1;
-		}
-
 		DXGI_SWAP_CHAIN_DESC1 sd = { 0 };
 		sd.Width = 1;
 		sd.Height = 1;
 		sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		sd.Stereo = FALSE;
-		sd.SampleDesc.Count = sampleCount;
-		sd.SampleDesc.Quality = sampleQuality;
+		sd.SampleDesc.Count = 1;
+		sd.SampleDesc.Quality = 0;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		sd.BufferCount = 2;  // double buffering
 		sd.Scaling = DXGI_SCALING_STRETCH;
-		sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		sd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
 		sd.Flags = 0;
 
@@ -152,13 +138,57 @@ namespace CubeRenderer {
 		CreateSwapChain(window);
 	}
 
-	void Graphics::CreateRenderTarget()
+	void Graphics::CreateRenderTarget(UINT sampleCount, UINT sampleQuality)
 	{
-		ComPtr<ID3D11Texture2D> backBuffer;
-		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 
-		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTargetView));
-		backBuffer.Reset();
+		sampleCount = max(min(sampleCount, 8), 1);
+
+		antiAliasing = false;
+
+		if (sampleCount > 1)
+		{
+			if (sampleQuality == 0)
+				sampleQuality = sampleCount - 1;
+			UINT maxQuality = 0;
+			device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampleCount, &maxQuality);
+			if (maxQuality != 0) {
+				antiAliasing = true;
+
+				if (sampleQuality >= maxQuality)
+
+				sampleQuality = maxQuality - 1;
+
+			} else sampleQuality = 0, sampleCount = 1;
+		}
+		else 
+
+		if (renderTargetView) {
+			renderTargetView.Reset();
+		}
+
+		ID3D11Texture2D* backBuffer;
+
+		if (antiAliasing) {
+			DXGI_SWAP_CHAIN_DESC swapChainDesc;
+			swapChain->GetDesc(&swapChainDesc);
+
+			D3D11_TEXTURE2D_DESC texDesc = {};
+			texDesc.Width = swapChainDesc.BufferDesc.Width;
+			texDesc.Height = swapChainDesc.BufferDesc.Height;
+			texDesc.MipLevels = 1;
+			texDesc.ArraySize = 1;
+			texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			texDesc.SampleDesc.Count = sampleCount;
+			texDesc.SampleDesc.Quality = sampleQuality; // or D3D11_STANDARD_MULTISAMPLE_PATTERN
+			texDesc.Usage = D3D11_USAGE_DEFAULT;
+			texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+			ThrowIfFailed(device->CreateTexture2D(&texDesc, nullptr, &backBuffer));
+		} else ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
+
+		ThrowIfFailed(device->CreateRenderTargetView(backBuffer, nullptr, &renderTargetView));
+		backBuffer->Release();
+		
 
 		D3D11_BUFFER_DESC cbd = {};
 		cbd.ByteWidth = sizeof(ConstantBuffer);
@@ -200,39 +230,44 @@ namespace CubeRenderer {
 		context->RSSetState(pRasterizerState);
 	}
 
-	void Graphics::CreateTriangle() {
-		// Define triangle vertices with positions and texture coordinates
-		Vertex vertices[] = {
-			// Top center vertex (red in UV space)
-			{ { 0.0f, 0.5f, 0.0f }, { 0.5f, 0.0f } },
+	void Graphics::CreateDepthStencil() {
 
-			// Bottom right vertex (green in UV space)
-			{ { 0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f } },
-
-			// Bottom left vertex (blue in UV space)
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f } }
-		};
-
-		// Create vertex buffer description
-		D3D11_BUFFER_DESC vertexBufferDesc = { 0 };
-		vertexBufferDesc.ByteWidth = sizeof(vertices);
-		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-		// Create subresource data
-		D3D11_SUBRESOURCE_DATA vertexData = { 0 };
-		vertexData.pSysMem = vertices;
-
-		// Create the vertex buffer
-		HRESULT hr = device->CreateBuffer(
-			&vertexBufferDesc,
-			&vertexData,
-			&vertexBuffer
-		);
-
-		if (FAILED(hr)) {
-			throw std::exception("Failed to create vertex buffer");
+		if (depthStencilBuffer) {
+			depthStencilBuffer.Reset();
+			depthStencilView.Reset();
+			depthStencilState.Reset();
 		}
+
+		DXGI_SWAP_CHAIN_DESC swapChainDesc;
+		swapChain->GetDesc(&swapChainDesc);
+
+		D3D11_TEXTURE2D_DESC depthDesc = {};
+
+		depthDesc.Width = swapChainDesc.BufferDesc.Width;
+		depthDesc.Height = swapChainDesc.BufferDesc.Height;
+
+		depthDesc.MipLevels = 1;
+		depthDesc.ArraySize = 1;
+		depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depthDesc.SampleDesc = swapChainDesc.SampleDesc;
+		depthDesc.Usage = D3D11_USAGE_DEFAULT;
+		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+		ThrowIfFailed(device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer));
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+		dsvDesc.Format = depthDesc.Format;
+		dsvDesc.ViewDimension = swapChainDesc.SampleDesc.Count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Texture2D.MipSlice = 0;
+
+		ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView));
+
+		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+		dsDesc.DepthEnable = TRUE;
+		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+		device->CreateDepthStencilState(&dsDesc, &depthStencilState);
 	}
 
 	void Graphics::CreateInputLayout() {
@@ -273,9 +308,10 @@ namespace CubeRenderer {
 
 		InitializeBlendState();
 
-		CreateRenderTarget();
+		//CreateRenderTarget();
 
 		if (window) Resize(window);
+		else Resize(100, 100);
 
 		CreatePixelShader();
 		CreateVertexShader();
@@ -372,58 +408,18 @@ namespace CubeRenderer {
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
 
-		ComPtr<ID3D11Resource> backBuffer;
+		/*ComPtr<ID3D11Resource> backBuffer;
 		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
-		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL, &renderTargetView));
+		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL, &renderTargetView));*/
+		CreateRenderTarget();
+		CreateDepthStencil();
 
 		UpdateViewport(width, height);
-	}
-
-	void Graphics::CreateDepthStencil() {
-
-		if (depthStencilBuffer) {
-			depthStencilBuffer.Reset();
-			depthStencilView.Reset();
-			depthStencilState.Reset();
-		}
-
-		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-		swapChain->GetDesc(&swapChainDesc);
-
-		D3D11_TEXTURE2D_DESC depthDesc = {};
-
-		depthDesc.Width = swapChainDesc.BufferDesc.Width;
-		depthDesc.Height = swapChainDesc.BufferDesc.Height;
-
-		depthDesc.MipLevels = 1;
-		depthDesc.ArraySize = 1;
-		depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthDesc.SampleDesc = swapChainDesc.SampleDesc;
-		depthDesc.Usage = D3D11_USAGE_DEFAULT;
-		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-		ThrowIfFailed(device->CreateTexture2D(&depthDesc, nullptr, &depthStencilBuffer));
-
-		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = depthDesc.Format;
-		dsvDesc.ViewDimension = swapChainDesc.SampleDesc.Count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
-		dsvDesc.Texture2D.MipSlice = 0;
-
-		ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView));
-
-		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-		dsDesc.DepthEnable = TRUE;
-		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-		device->CreateDepthStencilState(&dsDesc, &depthStencilState);
 	}
 
 	void Graphics::UpdateViewport(FLOAT width, FLOAT height) {
 
 		if (width == 0 || height == 0) return;
-
-		CreateDepthStencil();
 
 		FLOAT aspectRatio = width / height;
 
@@ -452,6 +448,8 @@ namespace CubeRenderer {
 
 		Clear();
 
+		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+
 		const ConstantBuffer cb = { {
 			XMMatrixTranspose(
 				XMMatrixRotationZ(z) *
@@ -467,9 +465,18 @@ namespace CubeRenderer {
 		memcpy(mappedResource.pData, &cb, sizeof(cb));
 		context->Unmap(constantBuffer.Get(), 0);
 
-		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
 		context->DrawIndexed(indexCount, 0, 0);
+
+		if (antiAliasing) {
+
+			ID3D11Texture2D* pBackBuffer = nullptr;
+			swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+
+			context->ResolveSubresource(pBackBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+
+			pBackBuffer->Release();
+		}
 
 		Present();
 	}

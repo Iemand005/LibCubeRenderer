@@ -49,12 +49,12 @@ namespace CubeRenderer {
 
 		void CreateDevice();
 		void CreateDevice(D3D_DRIVER_TYPE driverType);
-		void CreateSwapChain(HWND window = NULL, UINT sampleCount = 8, UINT sampleQuality = 0);
+		void CreateSwapChain(HWND window = NULL);
 
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
 
-		void CreateRenderTarget();
+		void CreateRenderTarget(UINT sampleCount = 1, UINT sampleQuality = 0);
 		void CreateDepthStencil();
 
 		void CreateVertexShader();
@@ -106,6 +106,8 @@ namespace CubeRenderer {
 
 		ComPtr<ID3D11RenderTargetView> renderTargetView;
 		ComPtr<ID3D11DepthStencilView> depthStencilView;
+
+		ComPtr< ID3D11Texture2D> msaaTexture;
 
 		ComPtr<ID3D11ShaderResourceView> textureView;
 		ComPtr<ID3D11SamplerState> sampler;
