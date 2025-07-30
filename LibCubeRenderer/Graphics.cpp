@@ -96,7 +96,7 @@ namespace CubeRenderer {
 #endif
 	}
 
-	void Graphics::CreateSwapChain(HWND window) {
+	void Graphics::CreateSwapChain(HWND window, UINT sampleCount, UINT sampleQuality) {
 
 		ComPtr<IDXGIAdapter1> dxgiAdapter;
 		dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter));
@@ -104,61 +104,53 @@ namespace CubeRenderer {
 		ComPtr<IDXGIFactory2> dxgiFactory2;
 		dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
 
+		if (swapChain)
+		{
+			swapChain->Release();
+			swapChain = nullptr;
+		}
+
+		sampleCount = max(min(sampleCount, 8), 1);
+
+		if (sampleCount > 1)
+		{
+			if (sampleQuality == 0)
+				sampleQuality = sampleCount - 1;
+			UINT maxQuality = 0;
+			device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, sampleCount, &maxQuality);
+			if (maxQuality == 0 && sampleCount > 1)
+				sampleQuality = 0, sampleCount = 1;
+			else if (sampleQuality >= maxQuality)
+				sampleQuality = maxQuality - 1;
+		}
+
 		DXGI_SWAP_CHAIN_DESC1 sd = { 0 };
-		sd.Width = 100; // Match the size of the window.
-		sd.Height = 1000;
-		sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // most common
+		sd.Width = 1;
+		sd.Height = 1;
+		sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		sd.Stereo = FALSE;
-		sd.SampleDesc.Count = 1;
-		sd.SampleDesc.Quality = 0;
+		sd.SampleDesc.Count = sampleCount;
+		sd.SampleDesc.Quality = sampleQuality;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		sd.BufferCount = 2;  // double buffering
 		sd.Scaling = DXGI_SCALING_STRETCH;
-		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		sd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
 		sd.Flags = 0;
 
 		if (!window) {
-
-
-			//ComPtr<IDXGISwapChain1> swapChain1;
 			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &sd, nullptr, &swapChain));
-			//swapChain1.As<IDXGISwapChain>(&swapChain);
 		}
 		else {
-
-
-			/*DXGI_SWAP_CHAIN_DESC sd = {};
-			sd.BufferDesc.Width = 0;
-			sd.BufferDesc.Height = 0;
-			sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			sd.BufferDesc.RefreshRate.Numerator = 0;
-			sd.BufferDesc.RefreshRate.Denominator = 0;
-			sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-			sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-			sd.SampleDesc.Count = 1;
-			sd.SampleDesc.Quality = 0;
-			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-			sd.BufferCount = 1;
-			sd.OutputWindow = window;*/
-			//ThrowIfFailed(dxgiFactory2->CreateSwapChainForHwnd(device.Get(), window, &sd, nullptr, nullptr, &swapChain));
 			sd.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 			ThrowIfFailed(dxgiFactory2->CreateSwapChainForHwnd(device.Get(), window, &sd, nullptr, nullptr, &swapChain));
-			//ThrowIfFailed(dxgiFactory2->CreateSwapChainForCoreWindow(device.Get(), window, &sd, nullptr, nullptr, &swapChain));
-
-			//ThrowIfFailed(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, nullptr, &context));
 		}
-
-		/*dxgiAdapter->Release();
-		dxgiFactory2->Release();*/
 	}
 
 	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window) {
 		CreateDevice();
 		CreateSwapChain(window);
 	}
-
-
 
 	void Graphics::CreateRenderTarget()
 	{
@@ -391,6 +383,10 @@ namespace CubeRenderer {
 
 		if (width == 0 || height == 0) return;
 
+		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+		swapChain->GetDesc(&swapChainDesc);
+		
+
 		FLOAT aspectRatio = width / height;
 
 		// Depth map stuff
@@ -402,7 +398,7 @@ namespace CubeRenderer {
 		depthDesc.MipLevels = 1;
 		depthDesc.ArraySize = 1;
 		depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		depthDesc.SampleDesc.Count = 1;
+		depthDesc.SampleDesc = swapChainDesc.SampleDesc;
 		depthDesc.Usage = D3D11_USAGE_DEFAULT;
 		depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
@@ -410,7 +406,7 @@ namespace CubeRenderer {
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		dsvDesc.Format = depthDesc.Format;
-		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.ViewDimension = swapChainDesc.SampleDesc.Count > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
 		dsvDesc.Texture2D.MipSlice = 0;
 
 		ThrowIfFailed(device->CreateDepthStencilView(depthStencilBuffer.Get(), &dsvDesc, &depthStencilView));
@@ -437,7 +433,7 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Clear() {
-		const float color[] = { 1.0f, 0.0f, 0.0f, 0.1f };
+		const float color[] = { 0.0f, 0.0f, 0.0f, 0.1f };
 		context->ClearRenderTargetView(renderTargetView.Get(), color);
 		if (depthStencilView)
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);

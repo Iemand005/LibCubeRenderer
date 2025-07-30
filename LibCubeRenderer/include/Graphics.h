@@ -49,7 +49,7 @@ namespace CubeRenderer {
 
 		void CreateDevice();
 		void CreateDevice(D3D_DRIVER_TYPE driverType);
-		void CreateSwapChain(HWND window = NULL);
+		void CreateSwapChain(HWND window = NULL, UINT sampleCount = 8, UINT sampleQuality = 0);
 
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
