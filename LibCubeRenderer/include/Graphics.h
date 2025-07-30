@@ -100,9 +100,6 @@ namespace CubeRenderer {
 
 		ComPtr<ID3D11Buffer> constantBuffer;
 
-		ComPtr<ID3D11Texture2D> backBuffer;
-		ComPtr<IDXGISurface> dxgiSurface;
-
 		ComPtr<ID3D11Texture2D> depthStencilBuffer;
 		ComPtr<ID3D11DepthStencilState> depthStencilState;
 

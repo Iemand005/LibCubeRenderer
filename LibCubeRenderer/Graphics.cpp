@@ -156,11 +156,14 @@ namespace CubeRenderer {
 
 	void Graphics::CreateRenderTarget()
 	{
+		ComPtr<ID3D11Texture2D> backBuffer;
+		//ComPtr<IDXGISurface> dxgiSurface;
 		ThrowIfFailed(swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &backBuffer));
 
 		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTargetView));
+		backBuffer.Reset();
 
-		backBuffer->QueryInterface(__uuidof(IDXGISurface), &dxgiSurface);
+		//backBuffer->QueryInterface(__uuidof(IDXGISurface), &dxgiSurface);
 
 		D3D11_BUFFER_DESC cbd = {};
 		cbd.ByteWidth = sizeof(ConstantBuffer);
@@ -420,8 +423,8 @@ namespace CubeRenderer {
 		context->OMSetRenderTargets(0, NULL, NULL);
 		renderTargetView.Reset();
 		depthStencilView.Reset();
-		backBuffer.Reset();
-		constantBuffer.Reset();
+		//backBuffer.Reset();
+		//constantBuffer.Reset();
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
 
