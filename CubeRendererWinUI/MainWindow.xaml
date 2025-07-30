@@ -8,8 +8,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="CubeRendererWinUI">
+    <Window.SystemBackdrop>
+        <MicaBackdrop Kind="Base"/>
+    </Window.SystemBackdrop>
 
-    <Grid>
-        <SwapChainPanel Name="SwapChainPanel"/>
-    </Grid>
+    <!--<Grid Name="VisualHost">-->
+        <SwapChainPanel Name="SwapChainPanel" IsHitTestVisible="False">
+            <Rectangle Height="200" Width="200"  Fill="Blue" Stroke="Red"></Rectangle>
+        </SwapChainPanel>
+        <!--<Canvas Name="Canvas"/>k-->
+        
+    <!--</Grid>-->
 </Window>

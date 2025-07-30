@@ -122,7 +122,7 @@ namespace CubeRenderer {
 		sd.Scaling = DXGI_SCALING_STRETCH;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 		sd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-		sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+		sd.Flags = 0;
 
 		if (!window) {
 			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &sd, nullptr, &swapChain));
@@ -212,9 +212,9 @@ namespace CubeRenderer {
 
 		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		rtvDesc.ViewDimension = antiAliasing ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
 
-		ThrowIfFailed(device->CreateRenderTargetView(backBuffer, NULL, &renderTargetView));
+		ThrowIfFailed(device->CreateRenderTargetView(backBuffer, &rtvDesc, &renderTargetView));
 
 		if (!antiAliasing) backBuffer->Release();
 		
@@ -467,7 +467,7 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Clear() {
-		const float color[] = { 0.0f, 1.0f, 0.0f, 0.1f };
+		const float color[] = { 0.0f, 1.0f, 0.0f, 0 };
 		context->ClearRenderTargetView(renderTargetView.Get(), color);
 		if (depthStencilView)
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -532,11 +532,17 @@ namespace CubeRenderer {
 		ID3D11BlendState* blendState = nullptr;
 		ThrowIfFailed(device->CreateBlendState(&blendDesc, &blendState));
 
-		context->OMSetBlendState(blendState, nullptr, 0xFFFFFFFF);
+		float blendFactor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		context->OMSetBlendState(blendState, blendFactor, 0xFFFFFFFF);
 	}
 
 	IDXGISwapChain* Graphics::GetSwapChain() {
 		return swapChain.Get();
+	}
+
+	ID3D11Device* Graphics::GetDevice() {
+		return device.Get();
 	}
 
 	Texture* Graphics::CreateTexture(const path& filename) {

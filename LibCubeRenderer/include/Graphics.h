@@ -78,6 +78,8 @@ namespace CubeRenderer {
 
 		void InitializeBlendState();
 
+		ID3D11Device* GetDevice();
+
 		Texture* CreateTexture(const path& filename);
 
 		IDXGISwapChain* GetSwapChain();
@@ -138,8 +140,8 @@ namespace CubeRenderer {
 		{
 			if (FAILED(hr))
 			{
-				//if (OnError) OnError(hr);
-				throw runtime_error("HRESULT failed: " + to_string(hr));
+				if (OnError) OnError(hr);
+				else throw runtime_error("HRESULT failed: " + to_string(hr));
 			}
 		}
 	};
