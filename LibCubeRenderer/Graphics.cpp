@@ -28,20 +28,27 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND hWnd) {
-		if (!hWnd) {
-			UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+
+		UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #ifdef _DEBUG
-			creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+		creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-			D3D_FEATURE_LEVEL featureLevels[] =
-			{
-				D3D_FEATURE_LEVEL_11_1,
-				D3D_FEATURE_LEVEL_11_0,
-				D3D_FEATURE_LEVEL_10_1,
-				D3D_FEATURE_LEVEL_10_0
-			};
+		D3D_FEATURE_LEVEL featureLevels[] = {
+			D3D_FEATURE_LEVEL_12_2,
+			D3D_FEATURE_LEVEL_12_1,
+			D3D_FEATURE_LEVEL_12_0,
+			D3D_FEATURE_LEVEL_11_1,
+			D3D_FEATURE_LEVEL_11_0,
+			D3D_FEATURE_LEVEL_10_1,
+			D3D_FEATURE_LEVEL_10_0,
+			D3D_FEATURE_LEVEL_9_3,
+			D3D_FEATURE_LEVEL_9_2,
+			D3D_FEATURE_LEVEL_9_1
+		};
+
+		if (!hWnd) {
 
 			D3D_FEATURE_LEVEL selectedFeatureLevel;
 			ThrowIfFailed(D3D11CreateDevice(nullptr, driverType, 0, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, &selectedFeatureLevel, &context));
@@ -49,7 +56,7 @@ namespace CubeRenderer {
 			ThrowIfFailed(device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
 
 			DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
-			swapChainDesc.Width = 1000; // Match the size of the window.
+			swapChainDesc.Width = 100; // Match the size of the window.
 			swapChainDesc.Height = 1000;
 			swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // most common
 			swapChainDesc.Stereo = FALSE;
@@ -92,18 +99,6 @@ namespace CubeRenderer {
 		}
 		else {
 
-			D3D_FEATURE_LEVEL featureLevels[] = {
-	D3D_FEATURE_LEVEL_12_2,
-	D3D_FEATURE_LEVEL_12_1,
-	D3D_FEATURE_LEVEL_12_0,
-	D3D_FEATURE_LEVEL_11_1,
-	D3D_FEATURE_LEVEL_11_0,
-	D3D_FEATURE_LEVEL_10_1,
-	D3D_FEATURE_LEVEL_10_0,
-	D3D_FEATURE_LEVEL_9_3,
-	D3D_FEATURE_LEVEL_9_2,
-	D3D_FEATURE_LEVEL_9_1
-			};
 
 			DXGI_SWAP_CHAIN_DESC sd = {};
 			sd.BufferDesc.Width = 0;
@@ -118,12 +113,6 @@ namespace CubeRenderer {
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = 1;
 			sd.OutputWindow = hWnd;
-
-			UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
-
-#ifdef _DEBUG
-			creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
-#endif
 
 			//IDXGISwapChain* swapChain;
 			//ComPtr<IDXGISwapChain> swapChainOld;
@@ -435,11 +424,11 @@ namespace CubeRenderer {
 		UpdateViewport(width, height);
 	}
 
-	void Graphics::UpdateViewport(UINT width, UINT height) {
+	void Graphics::UpdateViewport(FLOAT width, FLOAT height) {
 
 		if (width == 0 || height == 0) return;
 
-		float aspectRatio = width / height;
+		FLOAT aspectRatio = width / height;
 
 		// Depth map stuff
 		D3D11_TEXTURE2D_DESC depthDesc = {};
@@ -519,7 +508,7 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
-		int indexCount = scene->GetIndicesSize() / sizeof(unsigned short);
+		int indexCount = scene->GetIndexCount();//scene->GetIndicesSize() / sizeof(unsigned short);
 		context->DrawIndexed(indexCount, 0, 0);
 
 		Present();
