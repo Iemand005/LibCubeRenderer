@@ -42,6 +42,8 @@ namespace winrt::CubeRendererWinUI::implementation
 
     IDXGIDevice* dxgiDevice;
 
+    Graphics* graphics;
+
     //DispatcherTimer timer;
 
     //ID2D1DeviceContext* d2dContext;
@@ -62,11 +64,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
         ID3D11DeviceContext* tempContext;
 
-        D3D11CreateDevice(
-            NULL,
-            D3D_DRIVER_TYPE_HARDWARE, 0,
-            D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
-            featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, NULL, &tempContext);
+        D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, 0, D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, NULL, &tempContext);
 
         device->QueryInterface(IID_PPV_ARGS(&dxgiDevice));
     }
@@ -114,13 +112,8 @@ namespace winrt::CubeRendererWinUI::implementation
             D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
             D2D1::PixelFormat(
                 DXGI_FORMAT_B8G8R8A8_UNORM,
-                D2D1_ALPHA_MODE_PREMULTIPLIED), 144, 144);
+                D2D1_ALPHA_MODE_PREMULTIPLIED));
 
-        //bitmapProperties.PixelFormat.Format = Format.B8G8R8A8_UNorm;
-        //bitmapProperties.PixelFormat.AlphaMode = Vortice.DCommon.AlphaMode.Premultiplied;
-        //bitmapProperties.BitmapOptions = BitmapOptions.Target | BitmapOptions.CannotDraw;
-        //bitmapProperties.DpiX = 144;
-        //bitmapProperties.DpiY = 144;
         d2dContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer, bitmapProperties, &d2dTargetBitmap1);
         d2dContext->SetTarget(d2dTargetBitmap1);
         d2dContext->CreateSolidColorBrush(D2D1::ColorF(0.0f, 0.0f, 1.0f, 1.0f), &d2dbrush);
@@ -134,6 +127,11 @@ namespace winrt::CubeRendererWinUI::implementation
         d2dContext->BeginDraw();
 
         d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
+
+		graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
+		ID2D1Bitmap1* bitmap = graphics->RenderToBitmap(d2dContext);
+
+        d2dContext->DrawBitmap(bitmap);
 
         d2dContext->DrawLine(
             D2D1::Point2F(0.0f, 0.0f),
@@ -193,39 +191,47 @@ namespace winrt::CubeRendererWinUI::implementation
             HWND hWnd{ nullptr };
             windowNative->get_WindowHandle(&hWnd);*/
 
-   //         Graphics* graphics = new Graphics();
+            graphics = new Graphics();
 
-   //         graphics->OnError = [](HRESULT hr) {
-   //             OutputDebugString(TEXT("Oops"));
-   //             };
+            graphics->OnError = [](HRESULT hr) {
+                OutputDebugString(TEXT("Oops"));
+                };
 
-   //         //Scene* scene = graphics->CreateScene();
+            //Scene* scene = graphics->CreateScene();
 
 
-   //         Scene* scene = graphics->Init();
+            Scene* scene = graphics->Init();
 
-   //         Texture *steveTexture = graphics->CreateTexture(GetExecutableDirectory() / L"steve.png");
+            Texture *steveTexture = graphics->CreateTexture(GetExecutableDirectory() / L"steve.png");
 
-   //         scene->SetTexture(steveTexture);
+            scene->SetTexture(steveTexture);
 
-   //         scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, steveTexture);
+            scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, steveTexture);
 
-   //         // Waist
-   //         scene->AddCube(8, 12, 4, -2.0f, 12.0f, -2.0f, 16, 16, steveTexture);
+            // Waist
+            scene->AddCube(8, 12, 4, -2.0f, 12.0f, -2.0f, 16, 16, steveTexture);
 
-   //         // Left arm
-   //         scene->AddCube(4, 12, 4, 4.0f, 12.0f, -2.0f, 32, 48, steveTexture);
+            // Left arm
+            scene->AddCube(4, 12, 4, 4.0f, 12.0f, -2.0f, 32, 48, steveTexture);
 
-   //         // Right arm
-   //         scene->AddCube(4, 12, 4, -8.0f, 12.0f, -2.0f, 40, 16, steveTexture);
+            // Right arm
+            scene->AddCube(4, 12, 4, -8.0f, 12.0f, -2.0f, 40, 16, steveTexture);
 
-   //         // Left leg
-   //         scene->AddCube(4, 12, 4, -0.1, 0.0f, -2.0f, 16, 48, steveTexture);
+            // Left leg
+            scene->AddCube(4, 12, 4, -0.1, 0.0f, -2.0f, 16, 48, steveTexture);
 
-   //         // Right leg
-   //         scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, steveTexture);
+            // Right leg
+            scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, steveTexture);
 
-			//graphics->UpdateScene();
+			graphics->UpdateScene();
+
+            auto swapChain = graphics->GetSwapChain();
+
+            auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
+
+            nativePanel->SetSwapChain(swapChain);
+
+			graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
 
    //         /*auto canvas = Canvas();
    //         canvas.*/

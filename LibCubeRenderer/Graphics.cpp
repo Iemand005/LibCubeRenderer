@@ -467,7 +467,7 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Clear() {
-		const float color[] = { 0.0f, 1.0f, 0.0f, 0 };
+		const float color[] = { 1.0f, 1.0f, 1.0f, 0.0f };
 		context->ClearRenderTargetView(renderTargetView.Get(), color);
 		if (depthStencilView)
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -604,5 +604,22 @@ namespace CubeRenderer {
 
 
 		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
+	}
+
+	ID2D1Bitmap1* Graphics::RenderToBitmap(ID2D1DeviceContext* d2dContext) {
+
+		IDXGISurface* dxgiSurface;
+
+		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiSurface)));
+
+		D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
+			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+		);
+
+		ID2D1Bitmap1* bitmap;
+		ThrowIfFailed(d2dContext->CreateBitmapFromDxgiSurface(dxgiSurface, &props, &bitmap));
+
+		return bitmap;
 	}
 }

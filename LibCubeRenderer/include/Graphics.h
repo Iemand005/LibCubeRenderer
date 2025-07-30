@@ -84,6 +84,8 @@ namespace CubeRenderer {
 
 		IDXGISwapChain* GetSwapChain();
 
+		ID2D1Bitmap1* RenderToBitmap(ID2D1DeviceContext* d2dContext);
+
 		function<VOID(HRESULT)> OnError;
 	private:
 		ComPtr<ID3D11Device> device;
