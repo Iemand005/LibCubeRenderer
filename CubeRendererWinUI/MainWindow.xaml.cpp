@@ -197,47 +197,6 @@ namespace winrt::CubeRendererWinUI::implementation
 
             InitializeDirectX();
             
-
-            /*SwapChainPanel().Loaded([this](IInspectable const&, RoutedEventArgs const&) {
-                try {
-                    CreateSwapChain();
-                }
-                catch (const runtime_error& e) {
-                    OutputDebugStringA(e.what());
-                }});*/
-                //try {
-
-                //    auto swapChainPanel = SwapChainPanel();
-                //    auto nativePanel = swapChainPanel.as<ISwapChainPanelNative>();
-
-                //    
-
-                //    swapChainPanel.SizeChanged([swapChain](IInspectable const&, SizeChangedEventArgs const& e) {
-                //        try {
-                //            /*auto size = e.NewSize();
-                //            graphics->Resize(size.Width, size.Height);*/
-                //            //graphics->Render(1.0f, -3.0f, -2.0f, 0.0f);
-                //            d2dContext->BeginDraw();
-
-                //            d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
-
-                //            d2dContext->DrawLine(
-                //                D2D1::Point2F(0.0f, 0.0f),
-                //                D2D1::Point2F(100.0f, 100.0f),
-                //                d2dbrush,
-                //                1.0f);
-
-                //            d2dContext->EndDraw();
-                //            swapChain->Present(1, 0);
-                //        }
-                //        catch (const runtime_error& e) {
-
-                //        }
-                //        });
-                //}
-                //catch (const hresult_error& e) {
-                //    OutputDebugString(e.message().c_str());
-                //}
         }
         catch (const runtime_error& e) {
 
