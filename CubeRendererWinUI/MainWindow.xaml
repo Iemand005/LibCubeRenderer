@@ -12,11 +12,11 @@
         <MicaBackdrop Kind="Base"/>
     </Window.SystemBackdrop>
 
-    <!--<Grid Name="VisualHost">-->
-        <SwapChainPanel Name="SwapChainPanel" IsHitTestVisible="False">
+    <Grid>
+    <SwapChainPanel Name="SwapChainPanel" IsHitTestVisible="False" Loaded="SwapChainPanel_Loaded" SizeChanged="SwapChainPanel_SizeChanged">
             <Rectangle Height="200" Width="200"  Fill="Blue" Stroke="Red"></Rectangle>
         </SwapChainPanel>
         <!--<Canvas Name="Canvas"/>k-->
         
-    <!--</Grid>-->
+    </Grid>
 </Window>
