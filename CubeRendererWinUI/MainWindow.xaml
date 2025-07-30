@@ -13,9 +13,11 @@
     </Window.SystemBackdrop>
 
     <Grid>
-    <SwapChainPanel Name="SwapChainPanel" IsHitTestVisible="False" Loaded="SwapChainPanel_Loaded" SizeChanged="SwapChainPanel_SizeChanged">
-            <Rectangle Height="200" Width="200"  Fill="Blue" Stroke="Red"></Rectangle>
-        </SwapChainPanel>
+        <SwapChainPanel Name="SwapChainPanel" IsHitTestVisible="False" Loaded="SwapChainPanel_Loaded" /></SwapChainPanel>
+        
+        
+        <!--<Rectangle Height="200" Width="200"  Fill="Blue" Stroke="Red"></Rectangle>-->
+        
         <!--<Canvas Name="Canvas"/>k-->
         
     </Grid>

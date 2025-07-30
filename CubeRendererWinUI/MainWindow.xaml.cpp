@@ -32,10 +32,8 @@ namespace winrt::CubeRendererWinUI::implementation
 
 
     ID3D11Device* device;
-    IDXGIDevice* dxgiDevice;
-    ID3D11Texture2D* backBuffer;
-    IDXGISwapChain1* swapChain;
 
+    IDXGIDevice* dxgiDevice;
     //ID2D1DeviceContext* d2dContext;
     
     void MainWindow::InitializeDirectX() {
@@ -83,14 +81,16 @@ namespace winrt::CubeRendererWinUI::implementation
         IDXGIFactory2* dxgiFactory2;
         dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
 
+        IDXGISwapChain1* swapChain;
 
         // resize window flick bug
         HRESULT hr = dxgiFactory2->CreateSwapChainForComposition(device, &swapChainDesc, NULL, &swapChain);
 
+        ID3D11Texture2D* backBuffer;
         swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
         // renderTargetView = device.CreateRenderTargetView(backBuffer);
 
-        //IDXGISurface* dxgiBackBuffer;
+        IDXGISurface* dxgiBackBuffer;
         backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
 
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
@@ -197,6 +197,47 @@ namespace winrt::CubeRendererWinUI::implementation
 
             InitializeDirectX();
             
+
+            /*SwapChainPanel().Loaded([this](IInspectable const&, RoutedEventArgs const&) {
+                try {
+                    CreateSwapChain();
+                }
+                catch (const runtime_error& e) {
+                    OutputDebugStringA(e.what());
+                }});*/
+                //try {
+
+                //    auto swapChainPanel = SwapChainPanel();
+                //    auto nativePanel = swapChainPanel.as<ISwapChainPanelNative>();
+
+                //    
+
+                //    swapChainPanel.SizeChanged([swapChain](IInspectable const&, SizeChangedEventArgs const& e) {
+                //        try {
+                //            /*auto size = e.NewSize();
+                //            graphics->Resize(size.Width, size.Height);*/
+                //            //graphics->Render(1.0f, -3.0f, -2.0f, 0.0f);
+                //            d2dContext->BeginDraw();
+
+                //            d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
+
+                //            d2dContext->DrawLine(
+                //                D2D1::Point2F(0.0f, 0.0f),
+                //                D2D1::Point2F(100.0f, 100.0f),
+                //                d2dbrush,
+                //                1.0f);
+
+                //            d2dContext->EndDraw();
+                //            swapChain->Present(1, 0);
+                //        }
+                //        catch (const runtime_error& e) {
+
+                //        }
+                //        });
+                //}
+                //catch (const hresult_error& e) {
+                //    OutputDebugString(e.message().c_str());
+                //}
         }
         catch (const runtime_error& e) {
 
@@ -206,40 +247,6 @@ namespace winrt::CubeRendererWinUI::implementation
     void MainWindow::SwapChainPanel_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
     {
         CreateSwapChain();
-    }
-
-    void MainWindow::SwapChainPanel_SizeChanged(IInspectable const& sender, SizeChangedEventArgs const& e)
-    {
-        auto newSize = e.NewSize();
-       /* SwapChainPanel().Width(newSize.Width);
-        SwapChainPanel().Height(newSize.Height);*/
-		//ResizeSwapChain(newSize.Width, newSize.Height);
-    }
-
-    void MainWindow::ResizeSwapChain(UINT width, UINT height)
-    {
-        if (!d2dContext) return;
-
-        d2dContext->SetTarget(NULL);
-
-        backBuffer->Release();
-        dxgiBackBuffer->Release();
-        d2dTargetBitmap1->Release();
-
-        swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
-
-        swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
-
-        backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
-
-        auto bitmapProperties = D2D1::BitmapProperties1(
-            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-            D2D1::PixelFormat(
-                DXGI_FORMAT_B8G8R8A8_UNORM,
-                D2D1_ALPHA_MODE_PREMULTIPLIED), 144, 144);
-
-        d2dContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer, bitmapProperties, &d2dTargetBitmap1);
-        d2dContext->SetTarget(d2dTargetBitmap1);
     }
 
     int32_t MainWindow::MyProperty()
@@ -252,7 +259,5 @@ namespace winrt::CubeRendererWinUI::implementation
         throw hresult_not_implemented();
     }
 }
-
-
 
 
