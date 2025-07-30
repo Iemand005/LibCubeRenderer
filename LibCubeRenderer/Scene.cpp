@@ -5,7 +5,9 @@ namespace CubeRenderer {
 
     Scene::Scene() {
         indexCount = 0;
-        indices;
+        indices = NULL;
+        texture = NULL;
+        vertices = NULL;
     }
 
     Vertex* Scene::CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, Texture* texture, size_t* sizeOut, UINT* countOut) {
@@ -73,9 +75,7 @@ namespace CubeRenderer {
 
         Vertex* vertexBuffer = (Vertex*)malloc(sizeof(vertices));
         if (!vertexBuffer) {
-            //std::wcerr << L"Memory allocation failed in CreateVertices" << std::endl;
-            //throw winrt::hresult_error(6969);
-            return nullptr;
+            ThrowIfFailed(S_FALSE);
         }
 
         memcpy(vertexBuffer, vertices, sizeof(vertices));
@@ -116,10 +116,7 @@ namespace CubeRenderer {
 
         USHORT* indexBuffer = (USHORT*)malloc(*sizeOut);
         if (!indexBuffer) {
-            //std::wcerr << L"Memory allocation failed in CreateIndices" << std::endl;
-            //throw winrt::hresult_error(6969);
-
-            return nullptr;
+            ThrowIfFailed(S_FALSE);
         }
 
         memcpy(indexBuffer, indices, *sizeOut);
@@ -159,19 +156,15 @@ namespace CubeRenderer {
         UINT count;
         Vertex* newVertices = CreateVertices(width, height, depth, x, y, z, u, v, texture, &newVerticesSize, &count);
         if (!newVertices) {
-            //std::wcerr << L"Failed to create vertices for cube" << std::endl;
-            //throw winrt::hresult_error(6969);
-            return;
+            ThrowIfFailed(S_FALSE);
         }
 
         // Calculate the total size for vertices
         size_t totalVerticesCount = verticesSize / sizeof(Vertex) + count;
         Vertex* combinedVertices = (Vertex*)realloc(vertices, totalVerticesCount * sizeof(Vertex));
         if (!combinedVertices) {
-            //std::wcerr << L"Memory reallocation failed in AddCube" << std::endl;
-            //throw winrt::hresult_error(6969);
             free(newVertices);
-            return;
+            ThrowIfFailed(S_FALSE);
         }
 
         // Copy new vertices into the combined buffer
@@ -187,23 +180,15 @@ namespace CubeRenderer {
         UINT newIndexCount;
         USHORT* newIndices = CreateIndices(cubeIndex, &newIndicesSize, &newIndexCount);
         if (!newIndices) {
-            //std::wcerr << L"Failed to create indices for cube" << std::endl;
-            //std::wcerr << L"Memory reallocation failed in AddCube" << std::endl;
-            //throw winrt::hresult_error(6969);
-
-            return;
+            ThrowIfFailed(S_FALSE);
         }
 
         // Calculate the total size for indices
         size_t totalIndicesCount = indicesSize / sizeof(USHORT) + newIndexCount;
         USHORT* combinedIndices = (USHORT*)realloc(indices, totalIndicesCount * sizeof(USHORT));
         if (!combinedIndices) {
-            //std::wcerr << L"Memory reallocation failed in AddCube" << std::endl;
-            //std::wcerr << L"Memory reallocation failed in AddCube" << std::endl;
-            //throw winrt::hresult_error(6969);
-
             free(newIndices);
-            return;
+            ThrowIfFailed(S_FALSE);
         }
 
         // Copy new indices into the combined buffer
@@ -215,5 +200,13 @@ namespace CubeRenderer {
         indexCount += newIndexCount;
 
         free(newIndices);
+    }
+
+    void Scene::SetTexture(Texture* texture) {
+        this->texture = texture;
+    }
+
+    Texture* Scene::GetTexture() {
+        return this->texture;
     }
 }

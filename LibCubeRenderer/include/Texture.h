@@ -9,13 +9,15 @@ namespace CubeRenderer {
 	public:
 
 		Texture() = default;
-		Texture(PVOID pixels, UINT width, UINT height);
+		Texture(ID3D11Texture2D* texture);
 
 		UINT GetWidth();
 		UINT GetHeight();
 		void GetDimensions(PUINT width, PUINT height);
+
+		ID3D11Texture2D* GetResource();
+
 	private:
-		PBYTE pixels;
 		ComPtr<ID3D11Texture2D> texture;
 	};
 }

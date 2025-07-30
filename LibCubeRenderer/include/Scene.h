@@ -26,6 +26,8 @@ namespace CubeRenderer {
 
 		UINT cubeCount = 0;
 
+		Texture* texture;
+
 		Vertex* CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, Texture* texture, size_t* sizeOut, UINT* countOut);
 		USHORT* CreateIndices(USHORT offset, size_t* sizeOut, UINT* countOut);
 
@@ -44,6 +46,9 @@ namespace CubeRenderer {
 		Vertex* GetVertices();
 		USHORT* GetIndices();
 		void AddCube(float width, float height, float depth, float x, float y, float z, float u, float v, Texture* texture);
+
+		void SetTexture(Texture* texture);
+		Texture* GetTexture();
 
 		std::function<void(HRESULT)> OnError;
 	};

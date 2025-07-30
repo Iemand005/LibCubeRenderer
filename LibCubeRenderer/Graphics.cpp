@@ -27,8 +27,31 @@ namespace CubeRenderer {
 		}
 	}
 
-	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window) {
+	void Graphics::CreateDevice() {
+		D3D_DRIVER_TYPE driverTypes[] = {
+			D3D_DRIVER_TYPE_HARDWARE,
+			D3D_DRIVER_TYPE_WARP,
+			D3D_DRIVER_TYPE_REFERENCE
+		};
 
+		bool succeeded = false;
+		runtime_error* error = NULL;
+		for (UINT i = 0; i < ARRAYSIZE(driverTypes); i++)
+			try {
+			CreateDevice(driverTypes[i]);
+			succeeded = true;
+			break;
+		}
+		catch (const runtime_error& e) {
+			OutputDebugStringA(e.what());
+			*error = e;
+		}
+		if (!succeeded) {
+			throw* error;
+		}
+	}
+
+	void Graphics::CreateDevice(D3D_DRIVER_TYPE driverType) {
 		UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #ifdef _DEBUG
@@ -48,41 +71,64 @@ namespace CubeRenderer {
 			D3D_FEATURE_LEVEL_9_1
 		};
 
+		D3D_FEATURE_LEVEL selectedFeatureLevel;
+		ThrowIfFailed(D3D11CreateDevice(nullptr, driverType, 0, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, &selectedFeatureLevel, &context));
+
+		ThrowIfFailed(device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
+
+#ifdef _DEBUG
+		ComPtr<ID3D11Debug> debug;
+		device.As<ID3D11Debug>(&debug);
+		ComPtr<ID3D11InfoQueue> infoQueue;
+		debug.As<ID3D11InfoQueue>(&infoQueue);
+
+		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_INFO, true);
+		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
+		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+		infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+
+		D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET };
+		D3D11_INFO_QUEUE_FILTER filter = {};
+		filter.DenyList.NumIDs = _countof(hide);
+		filter.DenyList.pIDList = hide;
+		infoQueue->AddStorageFilterEntries(&filter);
+#endif
+	}
+
+	void Graphics::CreateSwapChain(HWND window) {
+
+		ComPtr<IDXGIAdapter1> dxgiAdapter;
+		dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter));
+
+		ComPtr<IDXGIFactory2> dxgiFactory2;
+		dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
+
+		DXGI_SWAP_CHAIN_DESC1 sd = { 0 };
+		sd.Width = 100; // Match the size of the window.
+		sd.Height = 1000;
+		sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // most common
+		sd.Stereo = FALSE;
+		sd.SampleDesc.Count = 1;
+		sd.SampleDesc.Quality = 0;
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.BufferCount = 2;  // double buffering
+		sd.Scaling = DXGI_SCALING_STRETCH;
+		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		sd.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+		sd.Flags = 0;
+
 		if (!window) {
 
-			D3D_FEATURE_LEVEL selectedFeatureLevel;
-			ThrowIfFailed(D3D11CreateDevice(nullptr, driverType, 0, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, &selectedFeatureLevel, &context));
 
-			ThrowIfFailed(device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
-
-			DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
-			swapChainDesc.Width = 100; // Match the size of the window.
-			swapChainDesc.Height = 1000;
-			swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // most common
-			swapChainDesc.Stereo = FALSE;
-			swapChainDesc.SampleDesc.Count = 1;
-			swapChainDesc.SampleDesc.Quality = 0;
-			swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-			swapChainDesc.BufferCount = 2;  // double buffering
-			swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-			swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-			swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
-			swapChainDesc.Flags = 0;
-
-			ComPtr<IDXGIAdapter1> dxgiAdapter;
-			dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter));
-
-			ComPtr<IDXGIFactory2> dxgiFactory2;
-			dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory2));
-
-			ComPtr<IDXGISwapChain1> swapChain1;
-			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc, nullptr, &swapChain1));
-			swapChain1.As<IDXGISwapChain>(&swapChain);
+			//ComPtr<IDXGISwapChain1> swapChain1;
+			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &sd, nullptr, &swapChain));
+			//swapChain1.As<IDXGISwapChain>(&swapChain);
 		}
 		else {
 
 
-			DXGI_SWAP_CHAIN_DESC sd = {};
+			/*DXGI_SWAP_CHAIN_DESC sd = {};
 			sd.BufferDesc.Width = 0;
 			sd.BufferDesc.Height = 0;
 			sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -94,28 +140,22 @@ namespace CubeRenderer {
 			sd.SampleDesc.Quality = 0;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = 1;
-			sd.OutputWindow = window;
+			sd.OutputWindow = window;*/
+			//ThrowIfFailed(dxgiFactory2->CreateSwapChainForHwnd(device.Get(), window, &sd, nullptr, nullptr, &swapChain));
+			sd.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+			ThrowIfFailed(dxgiFactory2->CreateSwapChainForHwnd(device.Get(), window, &sd, nullptr, nullptr, &swapChain));
+			//ThrowIfFailed(dxgiFactory2->CreateSwapChainForCoreWindow(device.Get(), window, &sd, nullptr, nullptr, &swapChain));
 
-			ThrowIfFailed(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, nullptr, &context));
+			//ThrowIfFailed(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, nullptr, &context));
 		}
-#ifdef _DEBUG
-			ComPtr<ID3D11Debug> debug;
-			device.As<ID3D11Debug>(&debug);
-			ComPtr<ID3D11InfoQueue> infoQueue;
-			debug.As<ID3D11InfoQueue>(&infoQueue);
 
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_INFO, true);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+		/*dxgiAdapter->Release();
+		dxgiFactory2->Release();*/
+	}
 
-			D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET };
-			D3D11_INFO_QUEUE_FILTER filter = {};
-			filter.DenyList.NumIDs = _countof(hide);
-			filter.DenyList.pIDList = hide;
-			infoQueue->AddStorageFilterEntries(&filter);
-#endif
+	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window) {
+		CreateDevice();
+		CreateSwapChain(window);
 	}
 
 
@@ -233,29 +273,6 @@ namespace CubeRenderer {
 		context->PSSetShader(pixelShader.Get(), nullptr, 0);
 	}
 
-	Scene* Graphics::Init() {
-
-		Scene* scene = CreateScene();
-
-		CreateDeviceAndSwapChain();
-
-		InitializeBlendState();
-
-		CreateRenderTarget();
-
-		CreatePixelShader();
-		CreateVertexShader();
-
-		CreateInputLayout();
-
-		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
-		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
-
-		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		
-		return scene;
-	}
-
 	Scene* Graphics::Init(HWND window) {
 
 		Scene* scene = CreateScene();
@@ -266,15 +283,13 @@ namespace CubeRenderer {
 
 		CreateRenderTarget();
 
-		Resize(window);
+		if (window) Resize(window);
 
 		CreatePixelShader();
 		CreateVertexShader();
 
 		CreateInputLayout();
 
-
-		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
 
 		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -296,11 +311,16 @@ namespace CubeRenderer {
 			SetVertexBuffer(vertices, verticesSize);
 			SetIndexBuffer(indices, indicesSize);
 			indexCount = scene->GetIndexCount();
+
+			Texture* texture = scene->GetTexture();
+			ThrowIfFailed(device->CreateShaderResourceView(texture->GetResource(), nullptr, textureView.GetAddressOf()));
+
+			context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 		}
 	}
 
 	Scene* Graphics::CreateScene() {
-		scene = std::make_unique<Scene>();
+		scene = make_unique<Scene>();
 		return GetScene();
 	}
 
@@ -478,7 +498,7 @@ namespace CubeRenderer {
 		return swapChain.Get();
 	}
 
-	Texture* Graphics::LoadTexture(const path& filename) {
+	Texture* Graphics::CreateTexture(const path& filename) {
 		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 		ULONG_PTR gdiplusToken;
 		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -487,7 +507,7 @@ namespace CubeRenderer {
 		if (pBitmap == nullptr || pBitmap->GetLastStatus() != Gdiplus::Ok) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 			ThrowIfFailed(E_FAIL);
-			return;
+			return NULL;
 		}
 
 		UINT width = pBitmap->GetWidth();
@@ -526,11 +546,13 @@ namespace CubeRenderer {
 		subresourceData.SysMemPitch = width * 4;
 		subresourceData.SysMemSlicePitch = 0;
 
-		ID3D11Texture2D* pTexture = nullptr;
-		ThrowIfFailed(device->CreateTexture2D(&textureDesc, &subresourceData, &pTexture));
+		ID3D11Texture2D* texture = nullptr;
+		ThrowIfFailed(device->CreateTexture2D(&textureDesc, &subresourceData, &texture));
 
-		ThrowIfFailed(device->CreateShaderResourceView(pTexture, nullptr, textureView.GetAddressOf()));
-		pTexture->Release();
+		return new Texture(texture);
+
+		ThrowIfFailed(device->CreateShaderResourceView(texture, nullptr, textureView.GetAddressOf()));
+		texture->Release();
 		delete[] pPixels;
 
 

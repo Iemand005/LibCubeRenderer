@@ -36,7 +36,9 @@ namespace winrt::CubeRendererWinUI::implementation
 
             Scene* scene = graphics->Init();
 
-            Texture *steveTexture = graphics->LoadTexture(GetExecutableDirectory() / L"steve.png");
+            Texture *steveTexture = graphics->CreateTexture(GetExecutableDirectory() / L"steve.png");
+
+            scene->SetTexture(steveTexture);
 
             scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, steveTexture);
 

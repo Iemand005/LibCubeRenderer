@@ -132,13 +132,43 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
         {
 		    graphics = new CubeRenderer::Graphics();
-			graphics->CreateScene();
-		    graphics->Init(hWnd);
+
+            CubeRenderer::Scene* scene = graphics->Init(hWnd);
             //graphics->GetScene()->AddCube(100.0f, 100.0f, 100, 0, 0, 0, 0, 0, 10, 10);
+
+            CubeRenderer::Texture* steveTexture = graphics->CreateTexture(L"steve.png");
+
+            scene->SetTexture(steveTexture);
+
+            scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, steveTexture);
+
+            // Waist
+            scene->AddCube(8, 12, 4, -2.0f, 12.0f, -2.0f, 16, 16, steveTexture);
+
+            // Left arm
+            scene->AddCube(4, 12, 4, 4.0f, 12.0f, -2.0f, 32, 48, steveTexture);
+
+            // Right arm
+            scene->AddCube(4, 12, 4, -8.0f, 12.0f, -2.0f, 40, 16, steveTexture);
+
+            // Left leg
+            scene->AddCube(4, 12, 4, -0.1, 0.0f, -2.0f, 16, 48, steveTexture);
+
+            // Right leg
+            scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, steveTexture);
+
+            graphics->UpdateScene();
 
             graphics->Render(10.0f, -3.0f, -2.0f, 0.0f);
         }
         break;
+    case WM_SIZE:
+        {
+            INT width = LOWORD(lParam);
+            INT height = HIWORD(lParam);
+            graphics->Resize(width, height);
+            graphics->Render(10.0f, -3.0f, -2.0f, 0.0f);
+        }
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);

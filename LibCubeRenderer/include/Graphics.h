@@ -45,8 +45,11 @@ namespace CubeRenderer {
 	class Graphics {
 	public:
 
-		Scene* Init();
-		Scene* Init(HWND window);
+		Scene* Init(HWND window = NULL);
+
+		void CreateDevice();
+		void CreateDevice(D3D_DRIVER_TYPE driverType);
+		void CreateSwapChain(HWND window = NULL);
 
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
@@ -74,7 +77,7 @@ namespace CubeRenderer {
 
 		void InitializeBlendState();
 
-		Texture* LoadTexture(const path& filename);
+		Texture* CreateTexture(const path& filename);
 
 		IDXGISwapChain* GetSwapChain();
 
@@ -83,7 +86,7 @@ namespace CubeRenderer {
 		ComPtr<ID3D11Device> device;
 		ComPtr<IDXGIDevice> dxgiDevice;
 		ComPtr<ID3D11DeviceContext> context;
-		ComPtr<IDXGISwapChain> swapChain;
+		ComPtr<IDXGISwapChain1> swapChain;
 
 		ComPtr<ID3D11Buffer> vertexBuffer;
 		ComPtr<ID3D11Buffer> indexBuffer;
@@ -112,6 +115,9 @@ namespace CubeRenderer {
 		XMMATRIX viewMatrix;
 
 		INT indexCount;
+
+		bool antiAliasing = true;
+		int antiAliasingSamples = 8;
 
 		void UpdateViewport(FLOAT width, FLOAT height);
 
