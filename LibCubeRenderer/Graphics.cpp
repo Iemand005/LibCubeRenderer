@@ -360,6 +360,7 @@ namespace CubeRenderer {
 			auto indicesSize = scene->GetIndicesSize();
 			SetVertexBuffer(vertices, verticesSize);
 			SetIndexBuffer(indices, indicesSize);
+			indexCount = scene->GetIndexCount();
 		}
 	}
 
@@ -508,7 +509,7 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
-		int indexCount = scene->GetIndexCount();//scene->GetIndicesSize() / sizeof(unsigned short);
+		//int indexCount = scene->GetIndexCount();//scene->GetIndicesSize() / sizeof(unsigned short);
 		context->DrawIndexed(indexCount, 0, 0);
 
 		Present();

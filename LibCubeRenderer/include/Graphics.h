@@ -114,6 +114,8 @@ namespace CubeRenderer {
 		XMMATRIX projectionMatrix;
 		XMMATRIX viewMatrix;
 
+		INT indexCount;
+
 		void UpdateViewport(FLOAT width, FLOAT height);
 
 		void SetVertexBuffer(Vertex* vertices, size_t size);
