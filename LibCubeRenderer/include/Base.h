@@ -12,6 +12,7 @@
 #include <d3dcompiler.h>
 
 #include <gdiplus.h>
+#include <wincodec.h>
 
 #include <dwmapi.h>
 
@@ -20,6 +21,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 #pragma comment(lib, "gdiplus.lib")
+#pragma comment(lib, "windowscodecs.lib")
 
 #include <Windows.h>
 

@@ -667,6 +667,47 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, PWCHAR fileName) {
+		
+		auto size = bitmap->GetSize();
+		bitmap->
+		// 1. Initialize WIC
+		IWICImagingFactory* wicFactory = nullptr;
+		CoCreateInstance(
+			CLSID_WICImagingFactory,
+			nullptr,
+			CLSCTX_INPROC_SERVER,
+			__uuidof(IWICImagingFactory),
+			(void**)&wicFactory
+		);
 
+		// 2. Create a WIC Bitmap from the pixel data
+		IWICBitmap* wicBitmap = nullptr;
+		wicFactory->CreateBitmapFromMemory(
+			size.width,
+			size.height,
+			GUID_WICPixelFormat32bppPBGRA, // Match your format (e.g., B8G8R8A8_UNORM)
+			mapped.RowPitch,
+			mapped.RowPitch * texDesc.Height,
+			(BYTE*)mapped.pData,
+			&wicBitmap
+		);
+
+		// 3. Save to PNG
+		IWICStream* stream = nullptr;
+		wicFactory->CreateStream(&stream);
+		stream->InitializeFromFilename(L"output.png", GENERIC_WRITE);
+
+		IWICBitmapEncoder* encoder = nullptr;
+		wicFactory->CreateEncoder(GUID_ContainerFormatPng, nullptr, &encoder);
+		encoder->Initialize(stream, WICBitmapEncoderNoCache);
+
+		IWICBitmapFrameEncode* frame = nullptr;
+		encoder->CreateNewFrame(&frame, nullptr);
+		frame->Initialize(nullptr);
+		frame->SetSize(texDesc.Width, texDesc.Height);
+		frame->SetPixelFormat(&GUID_WICPixelFormat32bppPBGRA);
+		frame->WritePixels(texDesc.Height, mapped.RowPitch, mapped.RowPitch * texDesc.Height, (BYTE*)mapped.pData);
+		frame->Commit();
+		encoder->Commit();
 	}
 }
