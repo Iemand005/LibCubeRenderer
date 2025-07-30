@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <filesystem>
+#include <string>
 
 #include <wrl/client.h>
 

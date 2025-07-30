@@ -28,14 +28,17 @@
 #include "Scene.h"
 
 namespace CubeRenderer {
+	using namespace std;
+	using namespace filesystem;
+
 	using namespace DirectX;
 	using namespace Microsoft::WRL;
 
-	inline std::filesystem::path GetExecutableDirectory()
+	inline path GetExecutableDirectory()
 	{
 		wchar_t buffer[MAX_PATH];
 		GetModuleFileNameW(nullptr, buffer, MAX_PATH);
-		return std::filesystem::path(buffer).parent_path();
+		return path(buffer).parent_path();
 	}
 
 
@@ -45,9 +48,8 @@ namespace CubeRenderer {
 		Scene* Init();
 		Scene* Init(HWND hWnd);
 
-		void CreateDevice();
-		void CreateSwapChain();
-		void CreateDeviceAndSwapChain(HWND hWnd);
+		void CreateDeviceAndSwapChain(HWND hWnd = NULL);
+		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND hWnd = NULL);
 
 		void CreateRenderTarget();
 
@@ -67,7 +69,7 @@ namespace CubeRenderer {
 		void Resize(UINT width, UINT height);
 
 		Scene *CreateScene();
-		void SetScene(std::unique_ptr<Scene> scene);
+		void SetScene(unique_ptr<Scene> scene);
 		Scene* GetScene();
 		void UpdateScene();
 
@@ -75,11 +77,11 @@ namespace CubeRenderer {
 
 		void UpdateViewport(HWND hWnd);
 
-		void LoadTexture(const std::filesystem::path& filename);
+		void LoadTexture(const path& filename);
 
 		IDXGISwapChain* GetSwapChain();
 
-		std::function<void(HRESULT)> OnError;
+		function<void(HRESULT)> OnError;
 	private:
 		ComPtr<ID3D11Device> device;
 		ComPtr<IDXGIDevice> dxgiDevice;
@@ -110,7 +112,7 @@ namespace CubeRenderer {
 		ComPtr<ID3D11ShaderResourceView> textureView;
 		ComPtr<ID3D11SamplerState> sampler;
 
-		std::unique_ptr<Scene> scene;
+		unique_ptr<Scene> scene;
 
 		XMMATRIX projectionMatrix;
 		XMMATRIX viewMatrix;
@@ -128,7 +130,8 @@ namespace CubeRenderer {
 		{
 			if (FAILED(hr))
 			{
-				if (OnError) OnError(hr);
+				//if (OnError) OnError(hr);
+				throw runtime_error("HRESULT failed: " + to_string(hr));
 			}
 		}
 	};
