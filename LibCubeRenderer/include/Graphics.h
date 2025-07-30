@@ -51,6 +51,8 @@ namespace CubeRenderer {
 		void CreateDevice(D3D_DRIVER_TYPE driverType);
 		void CreateSwapChain(HWND window = NULL);
 
+		void CreateD2DDeviceAndContext();
+
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
 
@@ -84,7 +86,7 @@ namespace CubeRenderer {
 
 		IDXGISwapChain* GetSwapChain();
 
-		ID2D1Bitmap1* RenderToBitmap(ID2D1DeviceContext* d2dContext);
+		ID2D1Bitmap1* RenderToBitmap();
 
 		function<VOID(HRESULT)> OnError;
 	private:
@@ -92,6 +94,10 @@ namespace CubeRenderer {
 		ComPtr<IDXGIDevice> dxgiDevice;
 		ComPtr<ID3D11DeviceContext> context;
 		ComPtr<IDXGISwapChain1> swapChain;
+
+		ComPtr<ID2D1Device> d2dDevice;
+		ComPtr<ID2D1DeviceContext> d2dContext;
+
 
 		ComPtr<ID3D11Buffer> vertexBuffer;
 		ComPtr<ID3D11Buffer> indexBuffer;

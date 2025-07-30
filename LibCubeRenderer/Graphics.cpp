@@ -133,6 +133,21 @@ namespace CubeRenderer {
 		}
 	}
 
+	void Graphics::CreateD2DDeviceAndContext()
+	{
+		IDXGIDevice* dxgiDevice = nullptr;
+		ThrowIfFailed(device->QueryInterface(IID_PPV_ARGS(&dxgiDevice)));
+
+		ID2D1Factory1* d2dFactory = nullptr;
+		D2D1_FACTORY_OPTIONS options = {};
+		ThrowIfFailed(D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory1), &options, (void**)&d2dFactory));
+
+		ID2D1Device* d2dDevice = nullptr;
+		ThrowIfFailed(d2dFactory->CreateDevice(dxgiDevice, &d2dDevice));
+
+		ThrowIfFailed(d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS, &d2dContext));
+	}
+
 	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window) {
 		CreateDevice();
 		CreateSwapChain(window);
@@ -606,52 +621,42 @@ namespace CubeRenderer {
 		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 	}
 
-	ID2D1Bitmap1* Graphics::RenderToBitmap(ID2D1DeviceContext* d2dContext) {
+	ID2D1Bitmap1* Graphics::RenderToBitmap() {
 
 		ID3D11Texture2D* backBuffer;
+		swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backBuffer);
 
-		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
-
-		DXGI_SWAP_CHAIN_DESC scDesc;
-		swapChain->GetDesc(&scDesc);
-
-		// 2. Create a compatible texture
+		// 2. Create compatible texture
 		D3D11_TEXTURE2D_DESC texDesc = {};
-		texDesc.Width = scDesc.BufferDesc.Width;
-		texDesc.Height = scDesc.BufferDesc.Height;
-		texDesc.MipLevels = 1;
-		texDesc.ArraySize = 1;
-		texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Must match swap chain format
-		texDesc.SampleDesc.Count = 1;
-		texDesc.Usage = D3D11_USAGE_DEFAULT;
+		backBuffer->GetDesc(&texDesc); // Copy properties from back buffer
 		texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		// Add these flags for Direct2D compatibility:
 		texDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
 
 		ID3D11Texture2D* stagingTexture;
 		device->CreateTexture2D(&texDesc, nullptr, &stagingTexture);
 
-		// 3. Copy the back buffer to your texture
+		// 3. Copy resource
 		context->CopyResource(stagingTexture, backBuffer);
 
-		// 4. Get a DXGI surface from the new texture
-		IDXGISurface1* usableSurface;
-		stagingTexture->QueryInterface(IID_PPV_ARGS(&usableSurface));
+		// 4. Get DXGI surface
+		IDXGISurface1* dxgiSurface = nullptr;
+		stagingTexture->QueryInterface(__uuidof(IDXGISurface1), (void**)&dxgiSurface);
 
-		D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
-			/*D2D1_BITMAP_OPTIONS_TARGET |*/ D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
-		);
-
+		// 5. Create D2D bitmap
 		D2D1_BITMAP_PROPERTIES1 bitmapProps = {};
 		bitmapProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-		bitmapProps.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		bitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+		bitmapProps.pixelFormat.format = texDesc.Format;
+		bitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
 		bitmapProps.dpiX = 96.0f;
 		bitmapProps.dpiY = 96.0f;
 
-		ID2D1Bitmap1* bitmap;
-		ThrowIfFailed(d2dContext->CreateBitmapFromDxgiSurface(usableSurface, &bitmapProps, &bitmap));
+		ID2D1Bitmap1* bitmap = nullptr;
+		ThrowIfFailed(d2dContext->CreateBitmapFromDxgiSurface(dxgiSurface, &bitmapProps, &bitmap));
+
+		// Cleanup
+		dxgiSurface->Release();
+		stagingTexture->Release();
+		backBuffer->Release();
 
 		return bitmap;
 	}

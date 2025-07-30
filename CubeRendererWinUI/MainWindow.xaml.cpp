@@ -126,16 +126,22 @@ namespace winrt::CubeRendererWinUI::implementation
     void MainWindow::Draw() {
         d2dContext->BeginDraw();
 
-        d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
+        d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
 
+        graphics->Resize(100, 100);
 		graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
-		ID2D1Bitmap1* bitmap = graphics->RenderToBitmap(d2dContext);
-
-        d2dContext->DrawBitmap(bitmap);
-
+		ID2D1Bitmap1* bitmap = graphics->RenderToBitmap();
         d2dContext->DrawLine(
             D2D1::Point2F(0.0f, 0.0f),
             D2D1::Point2F(100.0f, 100.0f),
+            d2dbrush,
+            1.0f);
+
+        d2dContext->DrawBitmap(bitmap, D2D1::RectF(0, 0, 100, 100), 0.5, D2D1_INTERPOLATION_MODE_LINEAR);
+
+        d2dContext->DrawLine(
+            D2D1::Point2F(0.0f, 0.0f),
+            D2D1::Point2F(1000.0f, 1000.0f),
             d2dbrush,
             1.0f);
 
@@ -232,6 +238,8 @@ namespace winrt::CubeRendererWinUI::implementation
             nativePanel->SetSwapChain(swapChain);
 
 			graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
+
+			graphics->CreateD2DDeviceAndContext();
 
    //         /*auto canvas = Canvas();
    //         canvas.*/

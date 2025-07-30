@@ -6,9 +6,9 @@
 
 #include <wrl/client.h>
 
+#include <dxgi1_6.h>
 #include <d2d1_1.h>
 #include <d3d11.h>
-#include <dxgi1_6.h>
 #include <d3dcompiler.h>
 
 #include <gdiplus.h>
