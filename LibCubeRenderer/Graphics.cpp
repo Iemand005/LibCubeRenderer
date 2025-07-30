@@ -3,31 +3,31 @@
 
 namespace CubeRenderer {
 
-	void Graphics::CreateDeviceAndSwapChain(HWND hWnd) {
+	void Graphics::CreateDeviceAndSwapChain(HWND window) {
 		D3D_DRIVER_TYPE driverTypes[] = {
 			D3D_DRIVER_TYPE_HARDWARE,
 			D3D_DRIVER_TYPE_WARP,
 			D3D_DRIVER_TYPE_REFERENCE
 		};
 
+		bool succeeded = false;
+		runtime_error* error = NULL;
 		for (UINT i = 0; i < ARRAYSIZE(driverTypes); i++)
 			try {
-				CreateDeviceAndSwapChain(driverTypes[i], hWnd);
+				CreateDeviceAndSwapChain(driverTypes[i], window);
+				succeeded = true;
 				break;
 			}
 			catch (const runtime_error& e) {
-				if (OnError) {
-					OnError(E_FAIL);
-				}
-				else {
-					OutputDebugStringA(e.what());
-				}
-				throw;
-
+				OutputDebugStringA(e.what());
+				*error = e;
 			}
+		if (!succeeded) {
+			throw *error;
+		}
 	}
 
-	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND hWnd) {
+	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window) {
 
 		UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
@@ -48,7 +48,7 @@ namespace CubeRenderer {
 			D3D_FEATURE_LEVEL_9_1
 		};
 
-		if (!hWnd) {
+		if (!window) {
 
 			D3D_FEATURE_LEVEL selectedFeatureLevel;
 			ThrowIfFailed(D3D11CreateDevice(nullptr, driverType, 0, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &device, &selectedFeatureLevel, &context));
@@ -112,7 +112,7 @@ namespace CubeRenderer {
 			sd.SampleDesc.Quality = 0;
 			sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			sd.BufferCount = 1;
-			sd.OutputWindow = hWnd;
+			sd.OutputWindow = window;
 
 			//IDXGISwapChain* swapChain;
 			//ComPtr<IDXGISwapChain> swapChainOld;
@@ -263,37 +263,16 @@ namespace CubeRenderer {
 
 		Scene* scene = CreateScene();
 
-		scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, 64, 64);
-
-		// Waist
-		scene->AddCube(8, 12, 4, -2.0f, 12.0f, -2.0f, 16, 16, 64, 64);
-
-		// Left arm
-		scene->AddCube(4, 12, 4, 4.0f, 12.0f, -2.0f, 32, 48, 64, 64);
-
-		// Right arm
-		scene->AddCube(4, 12, 4, -8.0f, 12.0f, -2.0f, 40, 16, 64, 64);
-
-		// Left leg
-		scene->AddCube(4, 12, 4, -0.1, 0.0f, -2.0f, 16, 48, 64, 64);
-
-		// Right leg
-		scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, 64, 64);
-
 		CreateDeviceAndSwapChain();
 
 		InitializeBlendState();
 
 		CreateRenderTarget();
 
-		//UpdateViewport(2000, 1000);
-
 		CreatePixelShader();
 		CreateVertexShader();
 
 		CreateInputLayout();
-
-		UpdateScene();
 
 		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
@@ -303,41 +282,23 @@ namespace CubeRenderer {
 		return scene;
 	}
 
-	Scene* Graphics::Init(HWND hWnd) {
+	Scene* Graphics::Init(HWND window) {
 
 		Scene* scene = CreateScene();
 
-		scene->AddCube(8, 8, 8, -2.0f, 22.0f, -2.0f, 0, 0, 64, 64);
-
-		// Waist
-		scene->AddCube(8, 12, 4, -2.0f, 12.0f, -2.0f, 16, 16, 64, 64);
-
-		// Left arm
-		scene->AddCube(4, 12, 4, 4.0f, 12.0f, -2.0f, 32, 48, 64, 64);
-
-		// Right arm
-		scene->AddCube(4, 12, 4, -8.0f, 12.0f, -2.0f, 40, 16, 64, 64);
-
-		// Left leg
-		scene->AddCube(4, 12, 4, -0.1, 0.0f, -2.0f, 16, 48, 64, 64);
-
-		// Right leg
-		scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, 64, 64);
-
-		CreateDeviceAndSwapChain(hWnd);
+		CreateDeviceAndSwapChain(window);
 
 		InitializeBlendState();
 
 		CreateRenderTarget();
 
-		UpdateViewport(hWnd);
+		Resize(window);
 
 		CreatePixelShader();
 		CreateVertexShader();
 
 		CreateInputLayout();
 
-		UpdateScene();
 
 		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
@@ -404,6 +365,13 @@ namespace CubeRenderer {
 
 		ThrowIfFailed(device->CreateBuffer(&indexBufferDescription, &indexSubresourceData, &indexBuffer));
 		context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+	}
+
+	void Graphics::Resize(HWND window) {
+		RECT rect;
+		GetClientRect(window, &rect);
+
+		Resize(rect.right - rect.left, rect.bottom - rect.top);
 	}
 
 	void Graphics::Resize(UINT width, UINT height) {
@@ -474,15 +442,8 @@ namespace CubeRenderer {
 		viewMatrix = XMMatrixTranslation(0.0f, 0.0f, 100.0f);
 	}
 
-	void Graphics::UpdateViewport(HWND hWnd) {
-		RECT rect;
-		GetClientRect(hWnd, &rect);
-
-		UpdateViewport(rect.right - rect.left, rect.bottom - rect.top);
-	}
-
 	void Graphics::Clear() {
-		const float color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+		const float color[] = { 1.0f, 0.0f, 0.0f, 0.1f };
 		context->ClearRenderTargetView(renderTargetView.Get(), color);
 		if (depthStencilView)
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -509,7 +470,6 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
-		//int indexCount = scene->GetIndexCount();//scene->GetIndicesSize() / sizeof(unsigned short);
 		context->DrawIndexed(indexCount, 0, 0);
 
 		Present();
@@ -544,7 +504,7 @@ namespace CubeRenderer {
 		return swapChain.Get();
 	}
 
-	void Graphics::LoadTexture(const std::filesystem::path& filename) {
+	void Graphics::LoadTexture(const path& filename) {
 		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 		ULONG_PTR gdiplusToken;
 		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -565,12 +525,16 @@ namespace CubeRenderer {
 		Gdiplus::BitmapData bitmapData;
 		Gdiplus::Rect rect(0, 0, width, height);
 		pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
+		
 
 		memcpy(pPixels, bitmapData.Scan0, bufferSize);
+
 
 		pBitmap->UnlockBits(&bitmapData);
 
 		delete pBitmap;
+
+		Gdiplus::GdiplusShutdown(gdiplusToken);
 
 		D3D11_TEXTURE2D_DESC textureDesc = {};
 		textureDesc.Width = width;
@@ -595,6 +559,7 @@ namespace CubeRenderer {
 		pTexture->Release();
 		delete[] pPixels;
 
-		Gdiplus::GdiplusShutdown(gdiplusToken);
+
+		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 	}
 }

@@ -46,10 +46,10 @@ namespace CubeRenderer {
 	public:
 
 		Scene* Init();
-		Scene* Init(HWND hWnd);
+		Scene* Init(HWND window);
 
-		void CreateDeviceAndSwapChain(HWND hWnd = NULL);
-		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND hWnd = NULL);
+		void CreateDeviceAndSwapChain(HWND window = NULL);
+		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
 
 		void CreateRenderTarget();
 
@@ -58,14 +58,13 @@ namespace CubeRenderer {
 
 		void CreateInputLayout();
 
-		
-
 		void CreateTriangle();
 
 		void Clear();
 		void Render(float angle, float x, float y, float z);
 		void Present();
 
+		void Resize(HWND window);
 		void Resize(UINT width, UINT height);
 
 		Scene *CreateScene();
@@ -74,8 +73,6 @@ namespace CubeRenderer {
 		void UpdateScene();
 
 		void InitializeBlendState();
-
-		void UpdateViewport(HWND hWnd);
 
 		void LoadTexture(const path& filename);
 

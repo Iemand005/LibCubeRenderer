@@ -53,6 +53,8 @@ namespace winrt::CubeRendererWinUI::implementation
             // Right leg
             scene->AddCube(4, 12, 4, -3.9f, 0.0f, -2.0f, 0, 16, 64, 64);
 
+			graphics->UpdateScene();
+
             graphics->LoadTexture(GetExecutableDirectory() / L"steve.png");
 
             auto swapChainPanel = this->SwapChainPanel();
