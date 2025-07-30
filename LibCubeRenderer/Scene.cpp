@@ -8,7 +8,10 @@ namespace CubeRenderer {
         indices;
     }
 
-    Vertex* Scene::CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, float textureWidth, float textureHeight, size_t* sizeOut, UINT* countOut) {
+    Vertex* Scene::CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, Texture* texture, size_t* sizeOut, UINT* countOut) {
+
+        UINT textureWidth = texture ? texture->GetWidth() : 64;
+        UINT textureHeight= texture ? texture->GetHeight() : 64;
 
         float left = -width / 2 + offsetX;
         float right = width / 2 + offsetX;
@@ -148,12 +151,12 @@ namespace CubeRenderer {
     }
 
 
-    void Scene::AddCube(float width, float height, float depth, float x, float y, float z, float u, float v, float textureWidth, float textureHeight) {
+    void Scene::AddCube(float width, float height, float depth, float x, float y, float z, float u, float v, Texture* texture) {
         UINT cubeIndex = cubeCount++;
 
         size_t newVerticesSize;
         UINT count;
-        Vertex* newVertices = CreateVertices(width, height, depth, x, y, z, u, v, textureWidth, textureHeight, &newVerticesSize, &count);
+        Vertex* newVertices = CreateVertices(width, height, depth, x, y, z, u, v, texture, &newVerticesSize, &count);
         if (!newVertices) {
             //std::wcerr << L"Failed to create vertices for cube" << std::endl;
             //throw winrt::hresult_error(6969);

@@ -78,24 +78,6 @@ namespace CubeRenderer {
 			ComPtr<IDXGISwapChain1> swapChain1;
 			ThrowIfFailed(dxgiFactory2->CreateSwapChainForComposition(device.Get(), &swapChainDesc, nullptr, &swapChain1));
 			swapChain1.As<IDXGISwapChain>(&swapChain);
-
-#ifdef _DEBUG
-			//ComPtr<ID3D11Debug> debug = device 
-			////ComPtr<ID3D11InfoQueue> infoQueue = debug.as<ID3D11InfoQueue>();
-
-			//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-			//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-			//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_INFO, true);
-			//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
-			//infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
-
-			///*D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_DEVICE_DRAW_RenderTargetVIEW_NOT_SET };
-			//D3D11_INFO_QUEUE_FILTER filter = {};
-			//filter.DenyList.NumIDs = _countof(hide);
-			//filter.DenyList.pIDList = hide;
-			//infoQueue->AddStorageFilterEntries(&filter);*/
-
-#endif
 		}
 		else {
 
@@ -114,31 +96,26 @@ namespace CubeRenderer {
 			sd.BufferCount = 1;
 			sd.OutputWindow = window;
 
-			//IDXGISwapChain* swapChain;
-			//ComPtr<IDXGISwapChain> swapChainOld;
 			ThrowIfFailed(D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, creationFlags, featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION, &sd, &swapChain, &device, nullptr, &context));
-			//swapChain.As<IDXGISwapChain>(&swapChainOld);
-
+		}
 #ifdef _DEBUG
 			ComPtr<ID3D11Debug> debug;
 			device.As<ID3D11Debug>(&debug);
 			ComPtr<ID3D11InfoQueue> infoQueue;
 			debug.As<ID3D11InfoQueue>(&infoQueue);
 
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
 			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_INFO, true);
 			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
 			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+			infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
 
-			/*D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_DEVICE_DRAW_RenderTargetVIEW_NOT_SET };
+			D3D11_MESSAGE_ID hide[] = { D3D11_MESSAGE_ID_DEVICE_DRAW_RENDERTARGETVIEW_NOT_SET };
 			D3D11_INFO_QUEUE_FILTER filter = {};
 			filter.DenyList.NumIDs = _countof(hide);
 			filter.DenyList.pIDList = hide;
-			infoQueue->AddStorageFilterEntries(&filter);*/
-
+			infoQueue->AddStorageFilterEntries(&filter);
 #endif
-		}
 	}
 
 
@@ -146,13 +123,10 @@ namespace CubeRenderer {
 	void Graphics::CreateRenderTarget()
 	{
 		ComPtr<ID3D11Texture2D> backBuffer;
-		//ComPtr<IDXGISurface> dxgiSurface;
-		ThrowIfFailed(swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), &backBuffer));
+		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 
 		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), nullptr, &renderTargetView));
 		backBuffer.Reset();
-
-		//backBuffer->QueryInterface(__uuidof(IDXGISurface), &dxgiSurface);
 
 		D3D11_BUFFER_DESC cbd = {};
 		cbd.ByteWidth = sizeof(ConstantBuffer);
@@ -504,7 +478,7 @@ namespace CubeRenderer {
 		return swapChain.Get();
 	}
 
-	void Graphics::LoadTexture(const path& filename) {
+	Texture* Graphics::LoadTexture(const path& filename) {
 		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 		ULONG_PTR gdiplusToken;
 		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);

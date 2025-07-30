@@ -74,7 +74,7 @@ namespace CubeRenderer {
 
 		void InitializeBlendState();
 
-		void LoadTexture(const path& filename);
+		Texture* LoadTexture(const path& filename);
 
 		IDXGISwapChain* GetSwapChain();
 

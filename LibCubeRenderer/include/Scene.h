@@ -4,6 +4,7 @@
 
 #include "Base.h"
 
+#include "Texture.h"
 //#include <Windows.h>
 
 namespace CubeRenderer {
@@ -25,7 +26,7 @@ namespace CubeRenderer {
 
 		UINT cubeCount = 0;
 
-		Vertex* CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, float textureWidth, float textureHeight, size_t* sizeOut, UINT* countOut);
+		Vertex* CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, Texture* texture, size_t* sizeOut, UINT* countOut);
 		USHORT* CreateIndices(USHORT offset, size_t* sizeOut, UINT* countOut);
 
 		inline void ThrowIfFailed(HRESULT hr)
@@ -42,7 +43,7 @@ namespace CubeRenderer {
 		size_t GetVerticesSize();
 		Vertex* GetVertices();
 		USHORT* GetIndices();
-		void AddCube(float width, float height, float depth, float x, float y, float z, float u, float v, float textureWidth, float textureHeight);
+		void AddCube(float width, float height, float depth, float x, float y, float z, float u, float v, Texture* texture);
 
 		std::function<void(HRESULT)> OnError;
 	};

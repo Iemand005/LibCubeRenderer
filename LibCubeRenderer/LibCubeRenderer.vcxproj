@@ -141,6 +141,7 @@
     <ClInclude Include="include\CubeRenderer.h" />
     <ClInclude Include="include\Graphics.h" />
     <ClInclude Include="include\Scene.h" />
+    <ClInclude Include="include\Texture.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +154,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl">
