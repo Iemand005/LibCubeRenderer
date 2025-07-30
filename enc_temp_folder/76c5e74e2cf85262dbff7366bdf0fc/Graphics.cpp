@@ -646,9 +646,7 @@ namespace CubeRenderer {
 		D2D1_BITMAP_PROPERTIES1 bitmapProps = {};
 		bitmapProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
 		bitmapProps.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		bitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
-		bitmapProps.dpiX = 96.0f;
-		bitmapProps.dpiY = 96.0f;
+		bitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
 
 		ID2D1Bitmap1* bitmap;
 		ThrowIfFailed(d2dContext->CreateBitmapFromDxgiSurface(usableSurface, &bitmapProps, &bitmap));
