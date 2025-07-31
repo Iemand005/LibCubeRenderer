@@ -94,6 +94,11 @@ namespace CubeRenderer {
 		void SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName);
 		void SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName);
 
+		HRESULT CreateD2DBitmapFromD3DTexture(
+			ID3D11Texture2D* d3dTexture,
+			ID2D1DeviceContext* d2dContext,
+			ID2D1Bitmap1** outD2dBitmap);
+
 		function<VOID(HRESULT)> OnError;
 	private:
 		ComPtr<ID3D11Device> device;

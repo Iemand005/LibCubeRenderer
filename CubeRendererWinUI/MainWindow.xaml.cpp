@@ -128,14 +128,21 @@ namespace winrt::CubeRendererWinUI::implementation
 
         d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
 
-        graphics->Resize(100, 100);
+        /*graphics->Resize(100, 100);
 		graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
-		ID2D1Bitmap1* bitmap = graphics->RenderToBitmap();
+		ID2D1Bitmap1* bitmap = graphics->RenderToBitmap();*/
         d2dContext->DrawLine(
             D2D1::Point2F(0.0f, 0.0f),
             D2D1::Point2F(100.0f, 100.0f),
             d2dbrush,
             1.0f);
+
+        auto texture = graphics->RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
+        graphics->SaveTextureToFIle(texture, L"C:\\Users\\Lasse\\Documents\\outpdddddut.png");
+
+        ID2D1Bitmap1* bitmap;
+		graphics->CreateD2DBitmapFromD3DTexture(texture, d2dContext, &bitmap);
+		graphics->SaveBitmapToFile(bitmap, L"C:\\Users\\Lasse\\Documents\\outp barfedut.png");
 
         d2dContext->DrawBitmap(bitmap, D2D1::RectF(0, 0, 100, 100), 0.5, D2D1_INTERPOLATION_MODE_LINEAR);
 
@@ -243,29 +250,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
 			graphics->CreateRenderTexture(100, 100);
 
-			auto texture = graphics->RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
-			graphics->SaveTextureToFIle(texture, L"C:\\Users\\Lasse\\Documents\\outpdddut.png");
-
-   //         /*auto canvas = Canvas();
-   //         canvas.*/
-
-   //         auto swapChainPanel = this->SwapChainPanel();
-   //         IDXGISwapChain* swapChain = graphics->GetSwapChain();
-   //         auto nativePanel = swapChainPanel.as<ISwapChainPanelNative>();
-
-   //         timer = DispatcherTimer();
-			//timer.Tick([this](auto&&...) {
-
-   //             auto dispatcher = winrt::Microsoft::UI::Dispatching::DispatcherQueue::GetForCurrentThread();
-
-   //             // When you need to update UI from another thread:
-   //             dispatcher.TryEnqueue([this](auto&&...) {
-   //                 // Safe to update UI here
-   //                 //Draw();
-   //                 });
-   //            
-   //             });;
-   //         timer.Interval(std::chrono::milliseconds(16));
+			
 
             InitializeDirectX();
 

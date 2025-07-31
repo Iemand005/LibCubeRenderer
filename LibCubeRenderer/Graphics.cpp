@@ -618,6 +618,40 @@ namespace CubeRenderer {
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 	}
 
+	HRESULT Graphics::CreateD2DBitmapFromD3DTexture(ID3D11Texture2D* d3dTexture, ID2D1DeviceContext* d2dContext, ID2D1Bitmap1** outD2dBitmap)
+	{
+		if (!d3dTexture || !d2dContext || !outD2dBitmap)
+			return E_INVALIDARG;
+
+		// Get texture description
+		D3D11_TEXTURE2D_DESC desc;
+		d3dTexture->GetDesc(&desc);
+
+		// Create a shared texture that D2D can use
+		Microsoft::WRL::ComPtr<IDXGISurface> dxgiSurface;
+		HRESULT hr = d3dTexture->QueryInterface(IID_PPV_ARGS(&dxgiSurface));
+		if (FAILED(hr)) return hr;
+
+		// Bitmap properties
+		/*D2D1_BITMAP_PROPERTIES1 bitmapProps = D2D1::BitmapProperties1(
+			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+			D2D1::PixelFormat(desc.Format, D2D1_ALPHA_MODE_PREMULTIPLIED)
+		);*/
+		D2D1_BITMAP_PROPERTIES1 bitmapProps = D2D1::BitmapProperties1(
+			D2D1_BITMAP_OPTIONS_TARGET,
+			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+		);
+
+		// Create the D2D bitmap
+		hr = d2dContext->CreateBitmapFromDxgiSurface(
+			dxgiSurface.Get(),
+			&bitmapProps,
+			outD2dBitmap
+		);
+
+		return hr;
+	}
+
 	void Graphics::Render(float angle, float x, float y, float z) {
 
 		Clear();
