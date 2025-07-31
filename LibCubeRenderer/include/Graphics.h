@@ -56,7 +56,7 @@ namespace CubeRenderer {
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
 
-		void CreateRenderTarget(UINT sampleCount = 8, UINT sampleQuality = 0);
+		void CreateRenderTarget(UINT sampleCount = 1, UINT sampleQuality = 0);
 		void CreateDepthStencil();
 
 		void CreateVertexShader();
@@ -67,7 +67,8 @@ namespace CubeRenderer {
 		void CreateTriangle();
 
 		void Clear();
-		void Render(float angle, float x, float y, float z);
+		void Render(float angle, float x, float y, float z, bool renderToTexture = false);
+		void RenderToTexture(float angle, float x, float y, float z)
 		void Present();
 
 		void Resize(HWND window);
@@ -85,6 +86,8 @@ namespace CubeRenderer {
 		Texture* CreateTexture(const path& filename);
 
 		IDXGISwapChain* GetSwapChain();
+
+		void CreateRenderTexture(UINT width, UINT height);
 
 		ID2D1Bitmap1* RenderToBitmap();
 
@@ -123,6 +126,11 @@ namespace CubeRenderer {
 
 		ComPtr<ID3D11ShaderResourceView> textureView;
 		ComPtr<ID3D11SamplerState> sampler;
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> textureRTV;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV;
+
 
 		unique_ptr<Scene> scene;
 

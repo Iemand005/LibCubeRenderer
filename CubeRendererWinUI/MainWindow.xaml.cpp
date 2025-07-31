@@ -100,7 +100,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
 
-        nativePanel->SetSwapChain(swapChain);
+        //nativePanel->SetSwapChain(swapChain);
 
         ID2D1Factory1* d2dFactory;
         D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory));

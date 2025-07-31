@@ -117,7 +117,7 @@ namespace CubeRenderer {
 		sd.Stereo = FALSE;
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
-		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
 		sd.BufferCount = 2;
 		sd.Scaling = DXGI_SCALING_STRETCH;
 		sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
@@ -272,6 +272,25 @@ namespace CubeRenderer {
 		ThrowIfFailed(device->CreateRasterizerState(&rasterDesc, &pRasterizerState));
 
 		context->RSSetState(pRasterizerState);
+	}
+
+	void Graphics::CreateRenderTexture(UINT width, UINT height) {
+		D3D11_TEXTURE2D_DESC textureDesc;
+		ZeroMemory(&textureDesc, sizeof(textureDesc));
+		textureDesc.Width = width;
+		textureDesc.Height = height;
+		textureDesc.MipLevels = 1;
+		textureDesc.ArraySize = 1;
+		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.CPUAccessFlags = 0;
+		textureDesc.MiscFlags = 0;
+
+		device->CreateTexture2D(&textureDesc, nullptr, renderTexture.GetAddressOf());
+		device->CreateRenderTargetView(renderTexture.Get(), nullptr, textureRTV.GetAddressOf());
+		device->CreateShaderResourceView(renderTexture.Get(), nullptr, textureSRV.GetAddressOf());
 	}
 
 	void Graphics::CreateDepthStencil() {
@@ -488,11 +507,25 @@ namespace CubeRenderer {
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
-	void Graphics::Render(float angle, float x, float y, float z) {
+	void Graphics::RenderToTexture(float angle, float x, float y, float z) {
+
+		const float color[] = { 1.0f, 1.0f, 1.0f, 0.0f };
+		context->ClearRenderTargetView(renderTargetView.Get(), color);
+
+		context->OMSetRenderTargets(1, textureRTV.GetAddressOf(), depthStencilView.Get());
+	}
+
+	void Graphics::Render(float angle, float x, float y, float z, bool renderToTexture = false) {
 
 		Clear();
 
-		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+		//context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+
+		if (renderToTexture) {
+		}
+		else {
+			context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+		}
 
 		const ConstantBuffer cb = { {
 			XMMatrixTranspose(
@@ -515,7 +548,7 @@ namespace CubeRenderer {
 		if (antiAliasing) {
 
 			ID3D11Texture2D* pBackBuffer = nullptr;
-			swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+			swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 
 			context->ResolveSubresource(pBackBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
 
@@ -623,50 +656,40 @@ namespace CubeRenderer {
 
 	ID2D1Bitmap1* Graphics::RenderToBitmap() {
 
-		ID3D11Texture2D* backBuffer;
+		ID3D11Texture2D* pBackBuffer = nullptr;
+		HRESULT hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
 
-		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
-
-		if (antiAliasing) {
-			context->ResolveSubresource(backBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+		// Create a DXGI surface from the back buffer
+		IDXGISurface* pSurface = nullptr;
+		if (SUCCEEDED(hr))
+		{
+			hr = pBackBuffer->QueryInterface(__uuidof(IDXGISurface), reinterpret_cast<void**>(&pSurface));
 		}
 
-		// 2. Create compatible texture
-		D3D11_TEXTURE2D_DESC texDesc = {};
-		backBuffer->GetDesc(&texDesc); // Copy properties from back buffer
-		texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		texDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+		// Create the D2D bitmap
+		ID2D1Bitmap1* pBitmap = nullptr;
+		if (SUCCEEDED(hr))
+		{
+			D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
+				D2D1_BITMAP_OPTIONS_TARGET,
+				D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+			);
 
-		ID3D11Texture2D* stagingTexture;
-		device->CreateTexture2D(&texDesc, nullptr, &stagingTexture);
-
-		// 3. Copy resource
-		context->CopyResource(stagingTexture, backBuffer);
-
-		// 4. Get DXGI surface
-		IDXGISurface1* dxgiSurface = nullptr;
-		stagingTexture->QueryInterface(__uuidof(IDXGISurface1), (void**)&dxgiSurface);
-
-		// 5. Create D2D bitmap
-		D2D1_BITMAP_PROPERTIES1 bitmapProps = {};
-		bitmapProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-		bitmapProps.pixelFormat.format = texDesc.Format;
-		bitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
-		bitmapProps.dpiX = 96.0f;
-		bitmapProps.dpiY = 96.0f;
-
-		ID2D1Bitmap1* bitmap = nullptr;
-		ThrowIfFailed(d2dContext->CreateBitmapFromDxgiSurface(dxgiSurface, &bitmapProps, &bitmap));
+			hr = d2dContext->CreateBitmapFromDxgiSurface(
+				pSurface,
+				&props,
+				&pBitmap
+			);
+		}
 
 		// Cleanup
-		dxgiSurface->Release();
-		stagingTexture->Release();
-		backBuffer->Release();
+		if (pSurface) pSurface->Release();
+		if (pBackBuffer) pBackBuffer->Release();
 
-		const WCHAR* a = L"C:\\Users\\Lasse\\Documents\\outputTeste.png";
-		SaveBitmapToFile(bitmap, a);
+		const WCHAR* a = L"C:\\Users\\Lasse\\Documents\\outputTfedstde.png";
+		SaveBitmapToFile(pBitmap, a);
 
-		return bitmap;
+		return pBitmap;
 	}
 
 	void Graphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName) {
