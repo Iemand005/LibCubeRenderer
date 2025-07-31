@@ -67,8 +67,8 @@ namespace CubeRenderer {
 		void CreateTriangle();
 
 		void Clear();
-		void Render(float angle, float x, float y, float z, bool renderToTexture = false);
-		void RenderToTexture(float angle, float x, float y, float z)
+		void Render(float angle, float x, float y, float z);
+		ID3D11Texture2D* RenderToTexture(float angle, float x, float y, float z);
 		void Present();
 
 		void Resize(HWND window);
@@ -92,6 +92,7 @@ namespace CubeRenderer {
 		ID2D1Bitmap1* RenderToBitmap();
 
 		void SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName);
+		void SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName);
 
 		function<VOID(HRESULT)> OnError;
 	private:

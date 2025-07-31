@@ -241,6 +241,11 @@ namespace winrt::CubeRendererWinUI::implementation
 
 			graphics->CreateD2DDeviceAndContext();
 
+			graphics->CreateRenderTexture(100, 100);
+
+			auto texture = graphics->RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
+			graphics->SaveTextureToFIle(texture, L"C:\\Users\\Lasse\\Documents\\outpdddut.png");
+
    //         /*auto canvas = Canvas();
    //         canvas.*/
 

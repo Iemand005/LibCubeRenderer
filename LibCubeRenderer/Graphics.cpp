@@ -507,26 +507,123 @@ namespace CubeRenderer {
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
-	void Graphics::RenderToTexture(float angle, float x, float y, float z) {
+	ID3D11Texture2D* Graphics::RenderToTexture(float angle, float x, float y, float z) {
 
-		const float color[] = { 1.0f, 1.0f, 1.0f, 0.0f };
-		context->ClearRenderTargetView(renderTargetView.Get(), color);
+		const float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		context->ClearRenderTargetView(textureRTV.Get(), color);
+		if (depthStencilView)
+			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+		D3D11_TEXTURE2D_DESC desc;
+		renderTexture->GetDesc(&desc);
+		desc.BindFlags = 0;
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+		ComPtr<ID3D11Texture2D> stagingTexture;
+		device->CreateTexture2D(&desc, nullptr, stagingTexture.GetAddressOf());
 
 		context->OMSetRenderTargets(1, textureRTV.GetAddressOf(), depthStencilView.Get());
+
+		const ConstantBuffer cb = { {
+			XMMatrixTranspose(
+				XMMatrixRotationZ(z) *
+				XMMatrixRotationY(x) *
+				XMMatrixRotationX(y) *
+				XMMatrixTranslation(x, -y, 0) *
+				viewMatrix * projectionMatrix
+			)
+		} };
+
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		memcpy(mappedResource.pData, &cb, sizeof(cb));
+		context->Unmap(constantBuffer.Get(), 0);
+
+
+		context->DrawIndexed(indexCount, 0, 0);
+
+		context->CopyResource(stagingTexture.Get(), renderTexture.Get());
+
+		return stagingTexture.Detach();
 	}
 
-	void Graphics::Render(float angle, float x, float y, float z, bool renderToTexture = false) {
+
+	void Graphics::SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName) {
+		/*texture->GetPrivateData()*/
+
+		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+		ULONG_PTR gdiplusToken;
+		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+
+		D3D11_TEXTURE2D_DESC desc;
+		texture->GetDesc(&desc);
+
+		// Create staging texture
+		desc.BindFlags = 0;
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.MiscFlags = 0;
+
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> stagingTexture;
+		HRESULT hr = device->CreateTexture2D(&desc, nullptr, &stagingTexture);
+
+		// Copy to staging texture
+		context->CopyResource(stagingTexture.Get(), texture);
+
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		hr = context->Map(stagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mapped);
+
+		try {
+			// Create GDI+ bitmap
+			Gdiplus::Bitmap bitmap(desc.Width, desc.Height, mapped.RowPitch,
+				PixelFormat32bppARGB, static_cast<BYTE*>(mapped.pData));
+
+			// Determine file format from extension if needed
+			// (Alternative to passing the GUID parameter)
+
+			// Save to file
+			CLSID clsid;
+				
+			//Gdiplus::GetImageEncoders
+
+			UINT num = 0;          // number of image encoders
+			UINT size = 0;         // size of the image encoder array in bytes
+
+			Gdiplus::GetImageEncodersSize(&num, &size);
+
+			Gdiplus::ImageCodecInfo* pImageCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc(size));\
+
+			Gdiplus::GetImageEncoders(num, size, pImageCodecInfo);
+
+			for (UINT j = 0; j < num; ++j)
+			{
+				if (wcscmp(pImageCodecInfo[j].MimeType, L"image/png") == 0)
+				{
+					clsid = pImageCodecInfo[j].Clsid;
+				}
+			}
+			free(pImageCodecInfo);
+
+			bitmap.Save(fileName, &clsid, nullptr);
+		}
+		catch (...) {
+			context->Unmap(stagingTexture.Get(), 0);
+		}
+
+		context->Unmap(stagingTexture.Get(), 0);
+
+		Gdiplus::GdiplusShutdown(gdiplusToken);
+	}
+
+	void Graphics::Render(float angle, float x, float y, float z) {
 
 		Clear();
 
-		//context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
-
-		if (renderToTexture) {
-		}
-		else {
-			context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
-		}
-
+		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+		
 		const ConstantBuffer cb = { {
 			XMMatrixTranspose(
 				XMMatrixRotationZ(z) *
@@ -656,15 +753,11 @@ namespace CubeRenderer {
 
 	ID2D1Bitmap1* Graphics::RenderToBitmap() {
 
-		ID3D11Texture2D* pBackBuffer = nullptr;
-		HRESULT hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer));
+		ID3D11Texture2D* pBackBuffer = RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
 
 		// Create a DXGI surface from the back buffer
 		IDXGISurface* pSurface = nullptr;
-		if (SUCCEEDED(hr))
-		{
-			hr = pBackBuffer->QueryInterface(__uuidof(IDXGISurface), reinterpret_cast<void**>(&pSurface));
-		}
+		HRESULT hr = pBackBuffer->QueryInterface(__uuidof(IDXGISurface), reinterpret_cast<void**>(&pSurface));
 
 		// Create the D2D bitmap
 		ID2D1Bitmap1* pBitmap = nullptr;
@@ -686,7 +779,7 @@ namespace CubeRenderer {
 		if (pSurface) pSurface->Release();
 		if (pBackBuffer) pBackBuffer->Release();
 
-		const WCHAR* a = L"C:\\Users\\Lasse\\Documents\\outputTfedstde.png";
+		const WCHAR* a = L"C:\\Users\\Lasse\\Documents\\outpuotTfedstde.png";
 		SaveBitmapToFile(pBitmap, a);
 
 		return pBitmap;
