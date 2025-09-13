@@ -126,7 +126,7 @@ namespace winrt::CubeRendererWinUI::implementation
     void MainWindow::Draw() {
         d2dContext->BeginDraw();
 
-        d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
+        d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 0.0f));
 
         /*graphics->Resize(100, 100);
 		graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
@@ -137,14 +137,13 @@ namespace winrt::CubeRendererWinUI::implementation
             d2dbrush,
             1.0f);
 
-        auto texture = graphics->RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
-        graphics->SaveTextureToFIle(texture, L"C:\\Users\\Lasse\\Documents\\outpdddddut.png");
+        //auto texture = graphics->RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
+       // graphics->SaveTextureToFIle(texture, L"C:\\Users\\Lasse\\Documents\\outpdddddut.png");
 
-        ID2D1Bitmap1* bitmap;
-		graphics->CreateD2DBitmapFromD3DTexture(texture, d2dContext, &bitmap);
-		graphics->SaveBitmapToFile(bitmap, L"C:\\Users\\Lasse\\Documents\\outp barfedut.png");
+        //ID2D1Bitmap1* bitmap = graphics->CreateD2DBitmapFromTexture(texture);
+		/*graphics->SaveBitmapToFile(bitmap, L"C:\\Users\\Lasse\\Documents\\outp iiibarfedut.png"); */
 
-        d2dContext->DrawBitmap(bitmap, D2D1::RectF(0, 0, 100, 100), 0.5, D2D1_INTERPOLATION_MODE_LINEAR);
+        //d2dContext->DrawBitmap(bitmap, D2D1::RectF(0, 0, 100, 100), 0.5, D2D1_INTERPOLATION_MODE_LINEAR);
 
         d2dContext->DrawLine(
             D2D1::Point2F(0.0f, 0.0f),
@@ -154,6 +153,8 @@ namespace winrt::CubeRendererWinUI::implementation
 
         d2dContext->EndDraw();
         swapChain->Present(1, 0);
+
+        graphics->Render(0, 0, 0, 0);
     }
 
     void MainWindow::ResizeSwapChain(UINT width, UINT height)
@@ -214,6 +215,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
 
             Scene* scene = graphics->Init();
+			graphics->CreateD2DDeviceAndContext();
 
             Texture *steveTexture = graphics->CreateTexture(GetExecutableDirectory() / L"steve.png");
 
@@ -244,11 +246,10 @@ namespace winrt::CubeRendererWinUI::implementation
 
             nativePanel->SetSwapChain(swapChain);
 
-			graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
+			//graphics->Render(0.0f, 0.0f, 0.0f, 0.0f);
 
-			graphics->CreateD2DDeviceAndContext();
 
-			graphics->CreateRenderTexture(100, 100);
+			//graphics->CreateRenderTexture(100, 100);
 
 			
 

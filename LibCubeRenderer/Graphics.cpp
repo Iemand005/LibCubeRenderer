@@ -111,9 +111,9 @@ namespace CubeRenderer {
 		}
 
 		DXGI_SWAP_CHAIN_DESC1 sd = {};
-		sd.Width = 1;
-		sd.Height = 1;
-		sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		sd.Width = 1000;
+		sd.Height = 1000;
+		sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		sd.Stereo = FALSE;
 		sd.SampleDesc.Count = 1;
 		sd.SampleDesc.Quality = 0;
@@ -140,7 +140,7 @@ namespace CubeRenderer {
 
 		ID2D1Factory1* d2dFactory = nullptr;
 		D2D1_FACTORY_OPTIONS options = {};
-		ThrowIfFailed(D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory1), &options, (void**)&d2dFactory));
+		ThrowIfFailed(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1), &options, (void**)&d2dFactory));
 
 		ID2D1Device* d2dDevice = nullptr;
 		ThrowIfFailed(d2dFactory->CreateDevice(dxgiDevice, &d2dDevice));
@@ -194,7 +194,7 @@ namespace CubeRenderer {
 			texDesc.Height = height;
 			texDesc.MipLevels = 1;
 			texDesc.ArraySize = 1;
-			texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			texDesc.SampleDesc = sampleDesc;
 			texDesc.Usage = D3D11_USAGE_DEFAULT;
 			texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
@@ -226,7 +226,7 @@ namespace CubeRenderer {
 
 
 		D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		rtvDesc.ViewDimension = antiAliasing ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
 
 		ThrowIfFailed(device->CreateRenderTargetView(backBuffer, &rtvDesc, &renderTargetView));
@@ -468,14 +468,36 @@ namespace CubeRenderer {
 		depthStencilView.Reset();
 		//backBuffer.Reset();
 		//constantBuffer.Reset();
+		if (backBuffer) {
+			backBuffer->Release();
+			dxgiBackBuffer->Release();
+			d2dTargetBitmap1->Release();
+		}
 
-		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
+
+		CreateRenderTarget();
+		CreateDepthStencil();
+		
+		swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+
+		backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
+
+		auto bitmapProperties = D2D1::BitmapProperties1(
+			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+			D2D1::PixelFormat(
+				DXGI_FORMAT_B8G8R8A8_UNORM,
+				D2D1_ALPHA_MODE_PREMULTIPLIED), 144, 144);
+
+		if (d2dContext) {
+
+			d2dContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer, bitmapProperties, &d2dTargetBitmap1);
+			d2dContext->SetTarget(d2dTargetBitmap1);
+		}
 
 		/*ComPtr<ID3D11Resource> backBuffer;
 		ThrowIfFailed(swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
 		ThrowIfFailed(device->CreateRenderTargetView(backBuffer.Get(), NULL, &renderTargetView));*/
-		CreateRenderTarget();
-		CreateDepthStencil();
 
 		UpdateViewport(width, height);
 	}
@@ -542,6 +564,9 @@ namespace CubeRenderer {
 
 
 		context->DrawIndexed(indexCount, 0, 0);
+
+		ID2D1Bitmap1* bitmap = CreateD2DBitmapFromTexture(renderTexture.Get());
+		SaveBitmapToFile(bitmap, L"C:\\Users\\Lasse\\Documents\\outp baoorfedut.png");
 
 		context->CopyResource(stagingTexture.Get(), renderTexture.Get());
 
@@ -618,31 +643,68 @@ namespace CubeRenderer {
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 	}
 
+	ID2D1Bitmap1* Graphics::CreateD2DBitmapFromTexture(ID3D11Texture2D* texture)
+	{
+		// Get the DXGI surface from the D3D11 texture
+		ComPtr<IDXGISurface> dxgiSurface;
+		texture->QueryInterface(IID_PPV_ARGS(&dxgiSurface));
+
+		// Bitmap properties
+		D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
+			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+			D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+		);
+
+		// Create the D2D bitmap
+		ComPtr<ID2D1Bitmap1> d2dBitmap;
+		HRESULT hr = d2dContext->CreateBitmapFromDxgiSurface(
+			dxgiSurface.Get(),
+			&bitmapProperties,
+			&d2dBitmap
+		);
+
+		if (FAILED(hr))
+		{
+			// Handle error
+			return nullptr;
+		}
+
+		return d2dBitmap.Detach();
+	}
+
 	HRESULT Graphics::CreateD2DBitmapFromD3DTexture(ID3D11Texture2D* d3dTexture, ID2D1DeviceContext* d2dContext, ID2D1Bitmap1** outD2dBitmap)
 	{
 		if (!d3dTexture || !d2dContext || !outD2dBitmap)
 			return E_INVALIDARG;
 
-		// Get texture description
+		// 1. Get texture description
 		D3D11_TEXTURE2D_DESC desc;
 		d3dTexture->GetDesc(&desc);
 
-		// Create a shared texture that D2D can use
+		// 2. Verify the texture format is compatible with D2D
+		// D2D typically works best with BGRA or RGBA formats
+		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM &&
+			desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
+		{
+			return E_INVALIDARG;
+		}
+
+		// 3. Get DXGI surface from the texture
 		Microsoft::WRL::ComPtr<IDXGISurface> dxgiSurface;
 		HRESULT hr = d3dTexture->QueryInterface(IID_PPV_ARGS(&dxgiSurface));
-		if (FAILED(hr)) return hr;
+		if (FAILED(hr)) {
+			return hr;
+		}
 
-		// Bitmap properties
-		/*D2D1_BITMAP_PROPERTIES1 bitmapProps = D2D1::BitmapProperties1(
-			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
-			D2D1::PixelFormat(desc.Format, D2D1_ALPHA_MODE_PREMULTIPLIED)
-		);*/
-		D2D1_BITMAP_PROPERTIES1 bitmapProps = D2D1::BitmapProperties1(
-			D2D1_BITMAP_OPTIONS_TARGET,
-			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
-		);
+		// 4. Set up bitmap properties
+		D2D1_BITMAP_PROPERTIES1 bitmapProps = {};
+		bitmapProps.pixelFormat.format = desc.Format;
+		bitmapProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
+		bitmapProps.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+		bitmapProps.dpiX = 96.0f;
+		bitmapProps.dpiY = 96.0f;
 
-		// Create the D2D bitmap
+		// 5. Create the D2D bitmap
 		hr = d2dContext->CreateBitmapFromDxgiSurface(
 			dxgiSurface.Get(),
 			&bitmapProps,
@@ -654,7 +716,28 @@ namespace CubeRenderer {
 
 	void Graphics::Render(float angle, float x, float y, float z) {
 
-		Clear();
+		//Clear();
+		{
+
+			swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+
+			backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
+
+			auto bitmapProperties = D2D1::BitmapProperties1(
+				D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+				D2D1::PixelFormat(
+					DXGI_FORMAT_B8G8R8A8_UNORM,
+					D2D1_ALPHA_MODE_PREMULTIPLIED), 144, 144);
+
+			d2dContext->CreateBitmapFromDxgiSurface(dxgiBackBuffer, bitmapProperties, &d2dTargetBitmap1);
+			d2dContext->SetTarget(d2dTargetBitmap1);
+
+			d2dContext->BeginDraw();
+
+			d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
+
+			d2dContext->EndDraw();
+		}
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 		
@@ -681,7 +764,7 @@ namespace CubeRenderer {
 			ID3D11Texture2D* pBackBuffer = nullptr;
 			swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 
-			context->ResolveSubresource(pBackBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_B8G8R8A8_UNORM);
+			context->ResolveSubresource(pBackBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
 
 			pBackBuffer->Release();
 		}
@@ -765,7 +848,7 @@ namespace CubeRenderer {
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
 		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags = 0;
+		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
 		D3D11_SUBRESOURCE_DATA subresourceData = {};
 		subresourceData.pSysMem = pPixels;
@@ -799,7 +882,7 @@ namespace CubeRenderer {
 		{
 			D2D1_BITMAP_PROPERTIES1 props = D2D1::BitmapProperties1(
 				D2D1_BITMAP_OPTIONS_TARGET,
-				D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+				D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
 			);
 
 			hr = d2dContext->CreateBitmapFromDxgiSurface(
@@ -857,7 +940,7 @@ namespace CubeRenderer {
 
 		// 3. Get bitmap properties
 		D2D1_SIZE_U size = bitmap->GetPixelSize();
-		WICPixelFormatGUID format = GUID_WICPixelFormat32bppPBGRA;
+		WICPixelFormatGUID format = GUID_WICPixelFormat32bppPRGBA;
 
 		hr = frame->SetSize(size.width, size.height);
 		if (FAILED(hr)) return;

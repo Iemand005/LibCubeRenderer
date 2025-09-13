@@ -98,6 +98,7 @@ namespace CubeRenderer {
 			ID3D11Texture2D* d3dTexture,
 			ID2D1DeviceContext* d2dContext,
 			ID2D1Bitmap1** outD2dBitmap);
+		ID2D1Bitmap1* CreateD2DBitmapFromTexture(ID3D11Texture2D* texture);
 
 		function<VOID(HRESULT)> OnError;
 	private:
@@ -136,6 +137,10 @@ namespace CubeRenderer {
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> textureRTV;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV;
+
+		ID3D11Texture2D* backBuffer;
+		IDXGISurface* dxgiBackBuffer;
+		ID2D1Bitmap1* d2dTargetBitmap1;
 
 
 		unique_ptr<Scene> scene;
