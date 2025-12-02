@@ -100,7 +100,7 @@ namespace winrt::CubeRendererWinUI::implementation
 
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
 
-        //nativePanel->SetSwapChain(swapChain);
+        nativePanel->SetSwapChain(swapChain);
 
         ID2D1Factory1* d2dFactory;
         D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, IID_PPV_ARGS(&d2dFactory));
@@ -135,7 +135,7 @@ namespace winrt::CubeRendererWinUI::implementation
             D2D1::Point2F(0.0f, 0.0f),
             D2D1::Point2F(100.0f, 100.0f),
             d2dbrush,
-            1.0f);
+            10.0f);
 
         //auto texture = graphics->RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
        // graphics->SaveTextureToFIle(texture, L"C:\\Users\\Lasse\\Documents\\outpdddddut.png");
@@ -143,7 +143,11 @@ namespace winrt::CubeRendererWinUI::implementation
         //ID2D1Bitmap1* bitmap = graphics->CreateD2DBitmapFromTexture(texture);
 		/*graphics->SaveBitmapToFile(bitmap, L"C:\\Users\\Lasse\\Documents\\outp iiibarfedut.png"); */
 
-        //d2dContext->DrawBitmap(bitmap, D2D1::RectF(0, 0, 100, 100), 0.5, D2D1_INTERPOLATION_MODE_LINEAR);
+        Texture* steveTexture = graphics->CreateTexture(GetExecutableDirectory() / L"C:\\Users\\Lasse\\Documents\\outpdddddut.png");
+
+        ID2D1Bitmap1* bitmap = graphics->CreateD2DBitmapFromTexture(steveTexture->GetResource());
+
+            d2dContext->DrawBitmap(bitmap, D2D1::RectF(0, 0, 1000, 1000), 1.0, D2D1_INTERPOLATION_MODE_LINEAR);
 
         d2dContext->DrawLine(
             D2D1::Point2F(0.0f, 0.0f),
@@ -152,9 +156,10 @@ namespace winrt::CubeRendererWinUI::implementation
             1.0f);
 
         d2dContext->EndDraw();
+
         swapChain->Present(1, 0);
 
-        graphics->Render(0, 0, 0, 0);
+        //graphics->Render(0, 0, 0, 0);
     }
 
     void MainWindow::ResizeSwapChain(UINT width, UINT height)

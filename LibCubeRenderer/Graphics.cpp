@@ -471,7 +471,7 @@ namespace CubeRenderer {
 		if (backBuffer) {
 			backBuffer->Release();
 			dxgiBackBuffer->Release();
-			d2dTargetBitmap1->Release();
+			if (d2dTargetBitmap1) d2dTargetBitmap1->Release();
 		}
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
@@ -647,7 +647,12 @@ namespace CubeRenderer {
 	{
 		// Get the DXGI surface from the D3D11 texture
 		ComPtr<IDXGISurface> dxgiSurface;
-		texture->QueryInterface(IID_PPV_ARGS(&dxgiSurface));
+		HRESULT hr = texture->QueryInterface(IID_PPV_ARGS(&dxgiSurface));
+
+		D3D11_TEXTURE2D_DESC textureDesc;
+
+		texture->GetDesc(&textureDesc);
+
 
 		// Bitmap properties
 		D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
@@ -657,9 +662,9 @@ namespace CubeRenderer {
 
 		// Create the D2D bitmap
 		ComPtr<ID2D1Bitmap1> d2dBitmap;
-		HRESULT hr = d2dContext->CreateBitmapFromDxgiSurface(
+		hr = d2dContext->CreateBitmapFromDxgiSurface(
 			dxgiSurface.Get(),
-			&bitmapProperties,
+			NULL,
 			&d2dBitmap
 		);
 
@@ -719,7 +724,7 @@ namespace CubeRenderer {
 		//Clear();
 		{
 
-			swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+			/*swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
 
 			backBuffer->QueryInterface(IID_PPV_ARGS(&dxgiBackBuffer));
 
@@ -736,7 +741,7 @@ namespace CubeRenderer {
 
 			d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
 
-			d2dContext->EndDraw();
+			d2dContext->EndDraw();*/
 		}
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
