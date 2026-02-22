@@ -13,5 +13,5 @@ struct VS_Output
 float4 main(VS_Output input) : SV_TARGET
 {
     float4 texColor = textureSampler.Sample(samplerState, input.textureCoordinate);
-    return texColor;
+    return texColor.zyxw;
 }

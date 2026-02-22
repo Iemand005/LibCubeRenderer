@@ -1,7 +1,37 @@
 #include "pch.h"
 #include "include/Graphics.h"
+//#include "Camera.h"
 
 namespace CubeRenderer {
+
+	Graphics::Graphics() {
+		camera = new Camera();
+	}
+
+	Scene* Graphics::Init(HWND window) {
+
+		Scene* scene = CreateScene();
+
+		CreateDeviceAndSwapChain(window);
+
+		InitializeBlendState();
+
+		//CreateRenderTarget();
+
+		if (window) Resize(window);
+		else Resize(100, 100);
+
+		CreatePixelShader();
+		CreateVertexShader();
+
+		CreateInputLayout();
+
+		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
+
+		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		return scene;
+	}
 
 	void Graphics::CreateDeviceAndSwapChain(HWND window) {
 		D3D_DRIVER_TYPE driverTypes[] = {
@@ -363,30 +393,7 @@ namespace CubeRenderer {
 		context->PSSetShader(pixelShader.Get(), nullptr, 0);
 	}
 
-	Scene* Graphics::Init(HWND window) {
-
-		Scene* scene = CreateScene();
-
-		CreateDeviceAndSwapChain(window);
-
-		InitializeBlendState();
-
-		//CreateRenderTarget();
-
-		if (window) Resize(window);
-		else Resize(100, 100);
-
-		CreatePixelShader();
-		CreateVertexShader();
-
-		CreateInputLayout();
-
-		context->PSSetSamplers(0, 1, sampler.GetAddressOf());
-
-		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		return scene;
-	}
+	
 
 	void Graphics::SetScene(std::unique_ptr<Scene> newScene) {
 		scene = std::move(newScene);
@@ -720,8 +727,17 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Render(float angle, float x, float y, float z) {
+		//Render(camera)
 
-		//Clear();
+		camera->rotation.x = x;
+		camera->rotation.y = y;
+		camera->rotation.z = z
+			;
+	}
+
+	void Graphics::Render(Camera *camera = nullptr) {
+
+		Clear();
 		{
 
 			/*swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
@@ -742,16 +758,25 @@ namespace CubeRenderer {
 			d2dContext->Clear(D2D1::ColorF(1.0f, 1.0f, 1.0f, 1.0f));
 
 			d2dContext->EndDraw();*/
+
 		}
+		if (!camera) camera = this->camera.Get();
+
+		//XMMatrixRotation()
 
 		context->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
+
+		//Camera *camera = new Camera();
+		/*camera->rotation.x = x;
+		camera->rotation.y = y;
+		camera->rotation.z = z;*/
 		
 		const ConstantBuffer cb = { {
 			XMMatrixTranspose(
-				XMMatrixRotationZ(z) *
-				XMMatrixRotationY(x) *
-				XMMatrixRotationX(y) *
-				XMMatrixTranslation(x, -y, 0) *
+				XMMatrixRotationY(camera->rotation.x) *
+				XMMatrixRotationX(camera->rotation.y) *
+				XMMatrixRotationZ(camera->rotation.z) *
+				XMMatrixTranslation(camera->rotation.x, -camera->rotation.y, 0) *
 				viewMatrix * projectionMatrix
 			)
 		} };

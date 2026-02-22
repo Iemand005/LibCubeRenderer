@@ -26,6 +26,7 @@
 #include "Base.h"
 
 #include "Scene.h"
+#include "Camera.h"
 
 namespace CubeRenderer {
 	using namespace std;
@@ -44,6 +45,8 @@ namespace CubeRenderer {
 
 	class Graphics {
 	public:
+
+		Graphics();
 
 		Scene* Init(HWND window = NULL);
 
@@ -106,6 +109,8 @@ namespace CubeRenderer {
 		ComPtr<IDXGIDevice> dxgiDevice;
 		ComPtr<ID3D11DeviceContext> context;
 		ComPtr<IDXGISwapChain1> swapChain;
+
+		ComPtr<Camera> camera;
 
 		ComPtr<ID2D1Device> d2dDevice;
 		ComPtr<ID2D1DeviceContext> d2dContext;
