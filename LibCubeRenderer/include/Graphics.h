@@ -71,6 +71,7 @@ namespace CubeRenderer {
 
 		void Clear();
 		void Render(float angle, float x, float y, float z);
+		void Render(Camera* camera = nullptr);
 		ID3D11Texture2D* RenderToTexture(float angle, float x, float y, float z);
 		void Present();
 

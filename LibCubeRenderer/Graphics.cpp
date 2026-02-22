@@ -735,7 +735,7 @@ namespace CubeRenderer {
 			;
 	}
 
-	void Graphics::Render(Camera *camera = nullptr) {
+	void Graphics::Render(Camera *camera) {
 
 		Clear();
 		{
