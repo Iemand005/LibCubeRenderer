@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Windows.h>
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 
@@ -13,8 +14,17 @@ public:
 
 	}
 
-	ULONG Release() {
+	ULONG  STDMETHODCALLTYPE Release() override {
 
 	}
+	HRESULT STDMETHODCALLTYPE QueryInterface(
+		/* [in] */ REFIID riid,
+		/* [iid_is][out] */ _COM_Outptr_ void __RPC_FAR* __RPC_FAR* ppvObject) override {
+	};
+
+	ULONG STDMETHODCALLTYPE AddRef(void) override {
+
+	};
+
 };
 

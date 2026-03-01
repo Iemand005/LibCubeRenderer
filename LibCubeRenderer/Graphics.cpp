@@ -4,9 +4,7 @@
 
 namespace CubeRenderer {
 
-	Graphics::Graphics() {
-		camera = new Camera();
-	}
+	//Graphics::Graphics() 
 
 	Scene* Graphics::Init(HWND window) {
 

@@ -46,7 +46,9 @@ namespace CubeRenderer {
 	class Graphics {
 	public:
 
-		Graphics();
+		Graphics() {
+			camera = new Camera();
+		};
 
 		Scene* Init(HWND window = NULL);
 
