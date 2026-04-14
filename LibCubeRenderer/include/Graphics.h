@@ -1,32 +1,9 @@
 #pragma once
 
-//#include <functional>
-//
-//#include <filesystem>
-//
-//#include <d3d11.h>
-//#include <dxgi1_6.h>
-//#include <d3dcompiler.h>
-//
-//#include <wrl/client.h>
-//
-//#include <Windows.h>
-//
-//#include <DirectXMath.h>
-//#include <DirectXPackedVector.h>
-
-
-//
-//#include <winrt/Windows.Foundation.h>
-//#include <winrt/Microsoft.UI.Xaml.h>
-//#include <winrt/Microsoft.UI.Xaml.Controls.h>
-//
-//#include <microsoft.ui.xaml.media.dxinterop.h>
-
 #include "Base.h"
 
 #include "Scene.h"
-#include "Camera.h"
+#include "../Camera.h"
 
 namespace CubeRenderer {
 	using namespace std;
@@ -56,7 +33,6 @@ namespace CubeRenderer {
 		void CreateDevice(D3D_DRIVER_TYPE driverType);
 		void CreateSwapChain(HWND window = NULL);
 
-		void CreateD2DDeviceAndContext();
 
 		void CreateDeviceAndSwapChain(HWND window = NULL);
 		void CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window = NULL);
@@ -74,37 +50,28 @@ namespace CubeRenderer {
 		void Clear();
 		void Render(float angle, float x, float y, float z);
 		void Render(Camera* camera = nullptr);
-		ID3D11Texture2D* RenderToTexture(float angle, float x, float y, float z);
 		void Present();
 
 		void Resize(HWND window);
 		void Resize(UINT width, UINT height);
 
-		Scene *CreateScene();
+		Scene* CreateScene();
 		void SetScene(unique_ptr<Scene> scene);
 		Scene* GetScene();
 		void UpdateScene();
 
 		void InitializeBlendState();
 
-		ID3D11Device* GetDevice();
 
 		Texture* CreateTexture(const path& filename);
 
+		ID3D11Device* GetDevice();
+		ID3D11DeviceContext* GetContext();
 		IDXGISwapChain* GetSwapChain();
+		IDXGISurface* GetDXGIBackBuffer();
 
 		void CreateRenderTexture(UINT width, UINT height);
 
-		ID2D1Bitmap1* RenderToBitmap();
-
-		void SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName);
-		void SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName);
-
-		HRESULT CreateD2DBitmapFromD3DTexture(
-			ID3D11Texture2D* d3dTexture,
-			ID2D1DeviceContext* d2dContext,
-			ID2D1Bitmap1** outD2dBitmap);
-		ID2D1Bitmap1* CreateD2DBitmapFromTexture(ID3D11Texture2D* texture);
 
 		function<VOID(HRESULT)> OnError;
 	private:
@@ -114,10 +81,6 @@ namespace CubeRenderer {
 		ComPtr<IDXGISwapChain1> swapChain;
 
 		ComPtr<Camera> camera;
-
-		ComPtr<ID2D1Device> d2dDevice;
-		ComPtr<ID2D1DeviceContext> d2dContext;
-
 
 		ComPtr<ID3D11Buffer> vertexBuffer;
 		ComPtr<ID3D11Buffer> indexBuffer;
@@ -148,7 +111,6 @@ namespace CubeRenderer {
 
 		ID3D11Texture2D* backBuffer;
 		IDXGISurface* dxgiBackBuffer;
-		ID2D1Bitmap1* d2dTargetBitmap1;
 
 
 		unique_ptr<Scene> scene;

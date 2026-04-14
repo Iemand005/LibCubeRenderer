@@ -15,15 +15,16 @@ public:
 	}
 
 	ULONG  STDMETHODCALLTYPE Release() override {
-
+		return 0;
 	}
 	HRESULT STDMETHODCALLTYPE QueryInterface(
 		/* [in] */ REFIID riid,
 		/* [iid_is][out] */ _COM_Outptr_ void __RPC_FAR* __RPC_FAR* ppvObject) override {
+		return S_OK;
 	};
 
 	ULONG STDMETHODCALLTYPE AddRef(void) override {
-
+		return 0;
 	};
 
 };
