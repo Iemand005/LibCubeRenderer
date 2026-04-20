@@ -3,7 +3,7 @@
 #include "Base.h"
 
 #include "Scene.h"
-#include "../Camera.h"
+#include "Camera.h"
 
 namespace CubeRenderer {
 	using namespace std;
