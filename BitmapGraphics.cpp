@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "BitmapGraphics.h"
+#include "include/BitmapGraphics.h"
 
 using namespace CubeRenderer;
 
