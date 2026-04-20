@@ -1,6 +1,6 @@
 #pragma once
 
-#include "include/Graphics.h"
+#include "Graphics.h"
 
 namespace CubeRenderer {
 	class BitmapGraphics : public Graphics
