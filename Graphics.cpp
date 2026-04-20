@@ -504,11 +504,8 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Render(float angle, float x, float y, float z) {
-		camera->rotation.x = x;
-		camera->rotation.y = y;
-		camera->rotation.z = z;
 
-		Render(camera.Get());
+		Render(new Camera(0, 0, 0, x, y, z));
 	}
 
 	void Graphics::Render(Camera *camera) {
