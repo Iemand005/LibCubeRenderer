@@ -11,7 +11,8 @@ public:
 	DirectX::XMFLOAT3 rotation;
 
 	Camera() {
-
+		position = { 0, 0, 0 };
+		rotation = { 0, 0, 0 };
 	}
 
 	ULONG  STDMETHODCALLTYPE Release() override {

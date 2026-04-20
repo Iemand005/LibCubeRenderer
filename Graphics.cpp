@@ -1,5 +1,3 @@
-#include "Graphics.h"
-#include "Graphics.h"
 #include "pch.h"
 #include "include/Graphics.h"
 //#include "Camera.h"
@@ -587,13 +585,13 @@ namespace CubeRenderer {
 		return device.Get();
 	}
 
-	int startX, startY;
+	int prevX, prevY;
 	bool isMouseDown = false;
 
 	void Graphics::MouseDown(int x, int y) {
 
-		startX = x;
-		startY = y;
+		prevX = x;
+		prevY = y;
 		isMouseDown = true;
 	}
 
@@ -607,8 +605,12 @@ namespace CubeRenderer {
 		// TODO: Move player head
 		if (!isMouseDown) return;
 
-		int deltaX = startX - x;
-		int deltaY = startY - x;
+		int deltaX = prevX - x;
+		int deltaY = prevY - x;
+
+		camera->rotation.x += deltaX;
+
+		prevX = x, prevY = y;
 	}
 
 	Texture* Graphics::CreateTexture(const path& filename) {
