@@ -66,6 +66,9 @@ namespace CubeRenderer {
 		Texture* CreateTexture(const path& filename);
 
 		ID3D11Device* GetDevice();
+		void MouseDown(int x, int y = 0);
+		void MouseUp();
+		void MouseMove(int x, int y = 0);
 		ID3D11DeviceContext* GetContext();
 		IDXGISwapChain* GetSwapChain();
 		IDXGISurface* GetDXGIBackBuffer();

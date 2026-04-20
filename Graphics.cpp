@@ -1,3 +1,5 @@
+#include "Graphics.h"
+#include "Graphics.h"
 #include "pch.h"
 #include "include/Graphics.h"
 //#include "Camera.h"
@@ -458,12 +460,10 @@ namespace CubeRenderer {
 		context->OMSetRenderTargets(0, NULL, NULL);
 		renderTargetView.Reset();
 		depthStencilView.Reset();
-		//backBuffer.Reset();
-		//constantBuffer.Reset();
+		
 		if (backBuffer) {
 			backBuffer->Release();
 			dxgiBackBuffer->Release();
-			//if (d2dTargetBitmap1) d2dTargetBitmap1->Release();
 		}
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
@@ -505,10 +505,6 @@ namespace CubeRenderer {
 			context->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}
 
-	
-
-
-
 	void Graphics::Render(float angle, float x, float y, float z) {
 		camera->rotation.x = x;
 		camera->rotation.y = y;
@@ -545,12 +541,12 @@ namespace CubeRenderer {
 
 		if (antiAliasing) {
 
-			ID3D11Texture2D* pBackBuffer = nullptr;
-			swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+			ID3D11Texture2D* backBuffer = nullptr;
+			swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
 
-			context->ResolveSubresource(pBackBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+			context->ResolveSubresource(backBuffer, 0, msaaTexture.Get(), 0, DXGI_FORMAT_R8G8B8A8_UNORM);
 
-			pBackBuffer->Release();
+			backBuffer->Release();
 		}
 
 		Present();
@@ -589,6 +585,30 @@ namespace CubeRenderer {
 
 	ID3D11Device* Graphics::GetDevice() {
 		return device.Get();
+	}
+
+	int startX, startY;
+	bool isMouseDown = false;
+
+	void Graphics::MouseDown(int x, int y) {
+
+		startX = x;
+		startY = y;
+		isMouseDown = true;
+	}
+
+	void Graphics::MouseUp() {
+
+		isMouseDown = false;
+	}
+
+	void Graphics::MouseMove(int x, int y) {
+
+		// TODO: Move player head
+		if (!isMouseDown) return;
+
+		int deltaX = startX - x;
+		int deltaY = startY - x;
 	}
 
 	Texture* Graphics::CreateTexture(const path& filename) {
