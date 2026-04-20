@@ -19,7 +19,6 @@ void BitmapGraphics::Resize(UINT width, UINT height) {
 }
 
 void BitmapGraphics::SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName) {
-	/*texture->GetPrivateData()*/
 
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
@@ -29,7 +28,6 @@ void BitmapGraphics::SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName
 	D3D11_TEXTURE2D_DESC desc;
 	texture->GetDesc(&desc);
 
-	// Create staging texture
 	desc.BindFlags = 0;
 	desc.Usage = D3D11_USAGE_STAGING;
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
@@ -46,20 +44,13 @@ void BitmapGraphics::SaveTextureToFIle(ID3D11Texture2D* texture, WCHAR* fileName
 	hr = context->Map(stagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mapped);
 
 	try {
-		// Create GDI+ bitmap
 		Gdiplus::Bitmap bitmap(desc.Width, desc.Height, mapped.RowPitch,
 			PixelFormat32bppARGB, static_cast<BYTE*>(mapped.pData));
 
-		// Determine file format from extension if needed
-		// (Alternative to passing the GUID parameter)
-
-		// Save to file
 		CLSID clsid;
 
-		//Gdiplus::GetImageEncoders
-
-		UINT num = 0;          // number of image encoders
-		UINT size = 0;         // size of the image encoder array in bytes
+		UINT num = 0;
+		UINT size = 0;
 
 		Gdiplus::GetImageEncodersSize(&num, &size);
 
@@ -221,11 +212,9 @@ ID2D1Bitmap1* BitmapGraphics::RenderToBitmap() {
 
 	ID3D11Texture2D* pBackBuffer = RenderToTexture(0.0f, 0.0f, 0.0f, 0.0f);
 
-	// Create a DXGI surface from the back buffer
 	IDXGISurface* pSurface = nullptr;
 	HRESULT hr = pBackBuffer->QueryInterface(__uuidof(IDXGISurface), reinterpret_cast<void**>(&pSurface));
 
-	// Create the D2D bitmap
 	ID2D1Bitmap1* pBitmap = nullptr;
 	if (SUCCEEDED(hr))
 	{
@@ -241,7 +230,6 @@ ID2D1Bitmap1* BitmapGraphics::RenderToBitmap() {
 		);
 	}
 
-	// Cleanup
 	if (pSurface) pSurface->Release();
 	if (pBackBuffer) pBackBuffer->Release();
 
@@ -265,7 +253,6 @@ void BitmapGraphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName
 	);
 	if (FAILED(hr)) return;
 
-	// 2. Create WIC components
 	Microsoft::WRL::ComPtr<IWICStream> stream;
 	hr = wicFactory->CreateStream(&stream);
 	if (FAILED(hr)) return;
@@ -287,7 +274,6 @@ void BitmapGraphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName
 	hr = frame->Initialize(nullptr);
 	if (FAILED(hr)) return;
 
-	// 3. Get bitmap properties
 	D2D1_SIZE_U size = bitmap->GetPixelSize();
 	WICPixelFormatGUID format = GUID_WICPixelFormat32bppPRGBA;
 
@@ -297,15 +283,13 @@ void BitmapGraphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName
 	hr = frame->SetPixelFormat(&format);
 	if (FAILED(hr)) return;
 
-	// 4. Copy bitmap data
-	UINT stride = size.width * 4; // 4 bytes per pixel (BGRA)
+	UINT stride = size.width * 4;
 	UINT bufferSize = stride * size.height;
 	std::vector<BYTE> pixels(bufferSize);
 
 	hr = bitmap->CopyFromMemory(nullptr, pixels.data(), stride);
 	if (FAILED(hr)) return;
 
-	// 5. Write to file
 	hr = frame->WritePixels(size.height, stride, bufferSize, pixels.data());
 	if (FAILED(hr)) return;
 
@@ -315,7 +299,6 @@ void BitmapGraphics::SaveBitmapToFile(ID2D1Bitmap* bitmap, const WCHAR* fileName
 	hr = encoder->Commit();
 	if (FAILED(hr)) return;
 
-	// 6. Cleanup
 	stream->Commit(STGC_DEFAULT);
 	CoUninitialize();
 }

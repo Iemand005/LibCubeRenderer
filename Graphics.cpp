@@ -191,7 +191,7 @@ namespace CubeRenderer {
 		}
 
 		sampleDesc.Count = sampleCount;
-		sampleDesc.Quality = sampleQuality; // or D3D11_STANDARD_MULTISAMPLE_PATTERN
+		sampleDesc.Quality = sampleQuality;
 
 		antiAliasing = sampleDesc.Count > 1;
 
@@ -261,7 +261,7 @@ namespace CubeRenderer {
 
 
 		D3D11_SAMPLER_DESC sampDesc = {};
-		sampDesc.Filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT; // Use linear filtering for smoother textures
+		sampDesc.Filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT;
 		//sampDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -275,8 +275,8 @@ namespace CubeRenderer {
 
 		D3D11_RASTERIZER_DESC rasterDesc = {};
 		rasterDesc.FillMode = D3D11_FILL_SOLID;
-		rasterDesc.CullMode = D3D11_CULL_BACK;  // Culling back faces
-		rasterDesc.FrontCounterClockwise = false;  // Set this to true if your front faces are counter-clockwise
+		rasterDesc.CullMode = D3D11_CULL_BACK;
+		rasterDesc.FrontCounterClockwise = false;
 		rasterDesc.DepthBias = 0;
 		rasterDesc.SlopeScaledDepthBias = 0.0f;
 		rasterDesc.DepthBiasClamp = 0.0f;
