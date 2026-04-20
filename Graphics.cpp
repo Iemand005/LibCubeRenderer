@@ -513,6 +513,8 @@ namespace CubeRenderer {
 		camera->rotation.x = x;
 		camera->rotation.y = y;
 		camera->rotation.z = z;
+
+		Render(camera.Get());
 	}
 
 	void Graphics::Render(Camera *camera) {
