@@ -1,13 +1,13 @@
 struct VS_Input
 {
     float3 position : POSITION;
-    float2 textureCoordinate : TEXTURECOORDINATE0; // Use float instead of half
+    float2 textureCoordinate : TEXTURECOORDINATE0;
 };
 
 struct VS_Output
 {
     float4 position : SV_POSITION;
-    float2 textureCoordinate : TEXTURECOORDINATE0; // Use float instead of half
+    float2 textureCoordinate : TEXTURECOORDINATE0;
 };
 
 cbuffer ConstantBuffer : register(b0)
