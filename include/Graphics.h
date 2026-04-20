@@ -24,7 +24,7 @@ namespace CubeRenderer {
 	public:
 
 		Graphics() {
-			camera.Attach(new Camera()) = ComPtr<Camera>();
+			camera.Attach(new Camera());
 		};
 
 		Scene* Init(HWND window = NULL);
