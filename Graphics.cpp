@@ -580,6 +580,10 @@ namespace CubeRenderer {
 		return device.Get();
 	}
 
+	ID3D11DeviceContext* Graphics::GetContext() {
+		return context.Get();
+	}
+
 	int prevX, prevY;
 	bool isMouseDown = false;
 
