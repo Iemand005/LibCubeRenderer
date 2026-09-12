@@ -40,6 +40,10 @@ namespace CubeRenderer {
 		}
 	public:
 		Scene();
+		~Scene();
+
+		Scene(const Scene&) = delete;
+		Scene& operator=(const Scene&) = delete;
 		UINT GetIndexCount();
 		size_t GetIndicesSize();
 		size_t GetVerticesSize();

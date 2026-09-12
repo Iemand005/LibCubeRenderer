@@ -38,21 +38,17 @@ namespace CubeRenderer {
 			D3D_DRIVER_TYPE_REFERENCE
 		};
 
-		bool succeeded = false;
-		runtime_error* error = NULL;
+		unique_ptr<runtime_error> error;
 		for (UINT i = 0; i < ARRAYSIZE(driverTypes); i++)
 			try {
 				CreateDeviceAndSwapChain(driverTypes[i], window);
-				succeeded = true;
-				break;
+				return;
 			}
 			catch (const runtime_error& e) {
 				OutputDebugStringA(e.what());
-				*error = e;
+				error = make_unique<runtime_error>(e);
 			}
-		if (!succeeded) {
-			throw *error;
-		}
+		throw runtime_error(error ? error->what() : "Failed to create device and swap chain");
 	}
 
 	void Graphics::CreateDevice() {
@@ -62,21 +58,17 @@ namespace CubeRenderer {
 			D3D_DRIVER_TYPE_REFERENCE
 		};
 
-		bool succeeded = false;
-		runtime_error* error = NULL;
+		unique_ptr<runtime_error> error;
 		for (UINT i = 0; i < ARRAYSIZE(driverTypes); i++)
 			try {
-			CreateDevice(driverTypes[i]);
-			succeeded = true;
-			break;
-		}
-		catch (const runtime_error& e) {
-			OutputDebugStringA(e.what());
-			*error = e;
-		}
-		if (!succeeded) {
-			throw* error;
-		}
+				CreateDevice(driverTypes[i]);
+				return;
+			}
+			catch (const runtime_error& e) {
+				OutputDebugStringA(e.what());
+				error = make_unique<runtime_error>(e);
+			}
+		throw runtime_error(error ? error->what() : "Failed to create device");
 	}
 
 	void Graphics::CreateDevice(D3D_DRIVER_TYPE driverType) {
@@ -164,7 +156,7 @@ namespace CubeRenderer {
 	
 
 	void Graphics::CreateDeviceAndSwapChain(D3D_DRIVER_TYPE driverType, HWND window) {
-		CreateDevice();
+		CreateDevice(driverType);
 		CreateSwapChain(window);
 	}
 
@@ -303,9 +295,9 @@ namespace CubeRenderer {
 		textureDesc.CPUAccessFlags = 0;
 		textureDesc.MiscFlags = 0;
 
-		device->CreateTexture2D(&textureDesc, nullptr, renderTexture.GetAddressOf());
-		device->CreateRenderTargetView(renderTexture.Get(), nullptr, textureRTV.GetAddressOf());
-		device->CreateShaderResourceView(renderTexture.Get(), nullptr, textureSRV.GetAddressOf());
+		ThrowIfFailed(device->CreateTexture2D(&textureDesc, nullptr, renderTexture.GetAddressOf()));
+		ThrowIfFailed(device->CreateRenderTargetView(renderTexture.Get(), nullptr, textureRTV.GetAddressOf()));
+		ThrowIfFailed(device->CreateShaderResourceView(renderTexture.Get(), nullptr, textureSRV.GetAddressOf()));
 	}
 
 	void Graphics::CreateDepthStencil() {
@@ -345,7 +337,7 @@ namespace CubeRenderer {
 		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 
-		device->CreateDepthStencilState(&dsDesc, &depthStencilState);
+		ThrowIfFailed(device->CreateDepthStencilState(&dsDesc, &depthStencilState));
 	}
 
 	void Graphics::CreateInputLayout() {
@@ -396,9 +388,10 @@ namespace CubeRenderer {
 			indexCount = scene->GetIndexCount();
 
 			Texture* texture = scene->GetTexture();
-			ThrowIfFailed(device->CreateShaderResourceView(texture->GetResource(), nullptr, textureView.GetAddressOf()));
-
-			context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
+			if (texture) {
+				ThrowIfFailed(device->CreateShaderResourceView(texture->GetResource(), nullptr, textureView.GetAddressOf()));
+				context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
+			}
 		}
 	}
 
@@ -461,7 +454,11 @@ namespace CubeRenderer {
 		
 		if (backBuffer) {
 			backBuffer->Release();
+			backBuffer = nullptr;
+		}
+		if (dxgiBackBuffer) {
 			dxgiBackBuffer->Release();
+			dxgiBackBuffer = nullptr;
 		}
 
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
@@ -505,7 +502,8 @@ namespace CubeRenderer {
 
 	void Graphics::Render(float angle, float x, float y, float z) {
 
-		Render(new Camera(0, 0, 0, x, y, z));
+		Camera cam(0, 0, 0, x, y, z);
+		Render(&cam);
 	}
 
 	void Graphics::Render(Camera *camera) {
@@ -521,7 +519,7 @@ namespace CubeRenderer {
 				XMMatrixRotationY(camera->rotation.x) *
 				XMMatrixRotationX(camera->rotation.y) *
 				XMMatrixRotationZ(camera->rotation.z) *
-				XMMatrixTranslation(camera->rotation.x, -camera->rotation.y, 0) *
+				XMMatrixTranslation(camera->position.x, camera->position.y, camera->position.z) *
 				viewMatrix * projectionMatrix
 			)
 		} };
@@ -603,7 +601,7 @@ namespace CubeRenderer {
 		if (!isMouseDown) return;
 
 		int deltaX = prevX - x;
-		int deltaY = prevY - x;
+		int deltaY = prevY - y;
 
 		camera->rotation.x += deltaX;
 
@@ -613,32 +611,24 @@ namespace CubeRenderer {
 	Texture* Graphics::CreateTexture(const path& filename) {
 		Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 		ULONG_PTR gdiplusToken;
-		GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+		Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
-		Gdiplus::Bitmap* pBitmap = Gdiplus::Bitmap::FromFile(filename.c_str());
-		if (pBitmap == nullptr || pBitmap->GetLastStatus() != Gdiplus::Ok) {
+		std::unique_ptr<Gdiplus::Bitmap> pBitmap(Gdiplus::Bitmap::FromFile(filename.c_str()));
+		if (!pBitmap || pBitmap->GetLastStatus() != Gdiplus::Ok) {
 			Gdiplus::GdiplusShutdown(gdiplusToken);
 			ThrowIfFailed(E_FAIL);
-			return NULL;
 		}
 
 		UINT width = pBitmap->GetWidth();
 		UINT height = pBitmap->GetHeight();
 
-		UINT bufferSize = width * height * 4;
-		BYTE* pPixels = new BYTE[bufferSize];
+		std::unique_ptr<BYTE[]> pPixels(new BYTE[(size_t)width * height * 4]);
 
 		Gdiplus::BitmapData bitmapData;
 		Gdiplus::Rect rect(0, 0, width, height);
 		pBitmap->LockBits(&rect, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &bitmapData);
-		
-
-		memcpy(pPixels, bitmapData.Scan0, bufferSize);
-
-
+		memcpy(pPixels.get(), bitmapData.Scan0, (size_t)width * height * 4);
 		pBitmap->UnlockBits(&bitmapData);
-
-		delete pBitmap;
 
 		Gdiplus::GdiplusShutdown(gdiplusToken);
 
@@ -651,10 +641,10 @@ namespace CubeRenderer {
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.Usage = D3D11_USAGE_DEFAULT;
 		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		textureDesc.CPUAccessFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA subresourceData = {};
-		subresourceData.pSysMem = pPixels;
+		subresourceData.pSysMem = pPixels.get();
 		subresourceData.SysMemPitch = width * 4;
 		subresourceData.SysMemSlicePitch = 0;
 
@@ -662,13 +652,6 @@ namespace CubeRenderer {
 		ThrowIfFailed(device->CreateTexture2D(&textureDesc, &subresourceData, &texture));
 
 		return new Texture(texture);
-
-		ThrowIfFailed(device->CreateShaderResourceView(texture, nullptr, textureView.GetAddressOf()));
-		texture->Release();
-		delete[] pPixels;
-
-
-		context->PSSetShaderResources(0, 1, textureView.GetAddressOf());
 	}
 
 }

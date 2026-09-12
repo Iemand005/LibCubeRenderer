@@ -10,6 +10,11 @@ namespace CubeRenderer {
         vertices = NULL;
     }
 
+    Scene::~Scene() {
+        free(vertices);
+        free(indices);
+    }
+
     Vertex* Scene::CreateVertices(float width, float height, float depth, float offsetX, float offsetY, float offsetZ, float u, float v, Texture* texture, size_t* sizeOut, UINT* countOut) {
 
         UINT textureWidth = 64;
