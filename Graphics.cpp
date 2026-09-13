@@ -631,6 +631,14 @@ namespace CubeRenderer {
 		ThrowIfFailed(device->CreateShaderResourceView(target.texture.Get(), nullptr, &target.shaderResourceView));
 	}
 
+	ComPtr<ID3DBlob> Graphics::CompileShader(const void* source, SIZE_T sourceSize, const char* target) {
+		ComPtr<ID3DBlob> blob;
+		ComPtr<ID3DBlob> error;
+		ThrowIfFailed(D3DCompile(source, sourceSize, nullptr, nullptr, nullptr,
+			"main", target, 0, 0, &blob, &error));
+		return blob;
+	}
+
 	void Graphics::CreateQuadResources(ID3DBlob* vertexShaderBlob, QuadResources& resources) {
 		D3D11_INPUT_ELEMENT_DESC layout[] = {
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },

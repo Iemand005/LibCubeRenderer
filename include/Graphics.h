@@ -94,6 +94,7 @@ namespace CubeRenderer {
 		IDXGISurface* GetDXGIBackBuffer();
 		void GetBackBufferSize(UINT* width, UINT* height) const;
 		void EnsureRenderTarget(RenderTarget& target, UINT width, UINT height);
+		ComPtr<ID3DBlob> CompileShader(const void* source, SIZE_T sourceSize, const char* target);
 		void CreateQuadResources(ID3DBlob* vertexShaderBlob, QuadResources& resources);
 		void CreateQuadVertexBuffer(float width, float height, ComPtr<ID3D11Buffer>& vertexBuffer);
 
