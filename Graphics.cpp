@@ -556,7 +556,11 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::Present() {
-		ThrowIfFailed(swapChain->Present(1, 0));
+		Present(1);
+	}
+
+	void Graphics::Present(UINT syncInterval) {
+		ThrowIfFailed(swapChain->Present(syncInterval, 0));
 	}
 
 	Scene* Graphics::GetScene() {

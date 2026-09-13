@@ -57,6 +57,7 @@ namespace CubeRenderer {
 		void Render(float angle, float x, float y, float z);
 		void Render(Camera* camera = nullptr);
 		void Present();
+		void Present(UINT syncInterval);
 
 		void Resize(HWND window);
 		void Resize(UINT width, UINT height);
