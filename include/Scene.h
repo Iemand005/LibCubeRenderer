@@ -11,7 +11,6 @@ namespace CubeRenderer {
 	struct Vertex {
 		struct { float x, y, z; } position;
 		struct { float u, v; } textureCoordinate;
-		float blur;
 	};
 
 
