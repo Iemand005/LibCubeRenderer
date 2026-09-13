@@ -137,6 +137,7 @@ namespace CubeRenderer {
 
 		BOOL superSampling = FALSE;
 		INT scalingFactor = 2;
+		BOOL customRendering = FALSE;
 
 		void UpdateViewport(FLOAT width, FLOAT height);
 

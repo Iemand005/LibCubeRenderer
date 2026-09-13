@@ -32,6 +32,7 @@ namespace CubeRenderer {
 	}
 
 	void Graphics::InitForCustomRendering(HWND window) {
+		customRendering = TRUE;
 		CreateDeviceAndSwapChain(window);
 		InitializeBlendState();
 
@@ -457,6 +458,7 @@ namespace CubeRenderer {
 
 		context->OMSetRenderTargets(0, NULL, NULL);
 		renderTargetView.Reset();
+		depthStencilBuffer.Reset();
 		depthStencilView.Reset();
 		
 		if (backBuffer) {
@@ -471,7 +473,8 @@ namespace CubeRenderer {
 		ThrowIfFailed(swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0));
 
 		CreateRenderTarget();
-		CreateDepthStencil();
+		if (!customRendering)
+			CreateDepthStencil();
 		
 		swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
 
