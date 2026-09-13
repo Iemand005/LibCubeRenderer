@@ -652,32 +652,11 @@ namespace CubeRenderer {
 		return CompileShader(LockResource(data), size, target);
 	}
 
-	void Graphics::CreateQuadResources(ID3DBlob* vertexShaderBlob, QuadResources& resources) {
-		CreateQuadVertexBuffer(2.0f, 2.0f, resources.vertexBuffer);
-
-		Plane plane = CreatePlane(2.0f, 2.0f);
+	void Graphics::CreateQuadResources(QuadResources& resources) {
 		D3D11_BUFFER_DESC desc = {};
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.ByteWidth = plane.indexCount * sizeof(USHORT);
-		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		D3D11_SUBRESOURCE_DATA data = { plane.indices, 0, 0 };
-		ThrowIfFailed(device->CreateBuffer(&desc, &data, &resources.indexBuffer));
-		DeletePlane(plane);
-
-		CreateQuadVertexBuffer(2.0f, 2.0f, resources.blurVertexBuffer);
-		plane = CreatePlane(2.0f, 2.0f);
-		desc.ByteWidth = plane.indexCount * sizeof(USHORT);
-		data = { plane.indices, 0, 0 };
-		ThrowIfFailed(device->CreateBuffer(&desc, &data, &resources.blurIndexBuffer));
-		DeletePlane(plane);
-
 		desc.ByteWidth = 192;
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.transformBuffer));
-		desc.ByteWidth = 16;
-		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.fadeBuffer));
-		desc.ByteWidth = 32;
-		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.blurBuffer));
 
 		D3D11_SAMPLER_DESC samplerDesc = {};
 		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -697,17 +676,6 @@ namespace CubeRenderer {
 		rasterizerDesc.FillMode = D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = D3D11_CULL_NONE;
 		ThrowIfFailed(device->CreateRasterizerState(&rasterizerDesc, &resources.rasterizer));
-	}
-
-	void Graphics::CreateQuadVertexBuffer(float width, float height, ComPtr<ID3D11Buffer>& vertexBuffer) {
-		Plane plane = CreatePlane(width, height);
-		D3D11_BUFFER_DESC desc = {};
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.ByteWidth = plane.vertexCount * sizeof(Vertex);
-		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		D3D11_SUBRESOURCE_DATA data = { plane.vertices, 0, 0 };
-		ThrowIfFailed(device->CreateBuffer(&desc, &data, &vertexBuffer));
-		DeletePlane(plane);
 	}
 
 	ID3D11Device* Graphics::GetDevice() {
