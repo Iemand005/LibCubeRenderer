@@ -679,7 +679,7 @@ namespace CubeRenderer {
 		desc.ByteWidth = sizeof(XMMATRIX);
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.transformBuffer));
-		desc.ByteWidth = 16;
+		desc.ByteWidth = 96;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.fadeBuffer));
 		desc.ByteWidth = 32;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.blurBuffer));
