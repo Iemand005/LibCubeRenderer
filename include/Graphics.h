@@ -22,6 +22,11 @@ namespace CubeRenderer {
 
 	class Graphics {
 	public:
+		struct RenderTarget {
+			ComPtr<ID3D11Texture2D> texture;
+			ComPtr<ID3D11RenderTargetView> renderTargetView;
+			ComPtr<ID3D11ShaderResourceView> shaderResourceView;
+		};
 
 		Graphics() {
 			camera.Attach(new Camera());
@@ -74,6 +79,8 @@ namespace CubeRenderer {
 		IDXGISwapChain* GetSwapChain();
 		ID3D11RenderTargetView* GetRenderTargetView();
 		IDXGISurface* GetDXGIBackBuffer();
+		void GetBackBufferSize(UINT* width, UINT* height) const;
+		void EnsureRenderTarget(RenderTarget& target, UINT width, UINT height);
 
 		void CreateRenderTexture(UINT width, UINT height);
 

@@ -587,6 +587,42 @@ namespace CubeRenderer {
 		return renderTargetView.Get();
 	}
 
+	void Graphics::GetBackBufferSize(UINT* width, UINT* height) const {
+		if (!width || !height || !swapChain) return;
+
+		DXGI_SWAP_CHAIN_DESC desc = {};
+		swapChain->GetDesc(&desc);
+		*width = desc.BufferDesc.Width;
+		*height = desc.BufferDesc.Height;
+	}
+
+	void Graphics::EnsureRenderTarget(RenderTarget& target, UINT width, UINT height) {
+		if (target.texture) {
+			D3D11_TEXTURE2D_DESC desc = {};
+			target.texture->GetDesc(&desc);
+			if (desc.Width == width && desc.Height == height)
+				return;
+		}
+
+		target.shaderResourceView.Reset();
+		target.renderTargetView.Reset();
+		target.texture.Reset();
+
+		D3D11_TEXTURE2D_DESC desc = {};
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = 1;
+		desc.ArraySize = 1;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.SampleDesc.Count = 1;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+		ThrowIfFailed(device->CreateTexture2D(&desc, nullptr, &target.texture));
+		ThrowIfFailed(device->CreateRenderTargetView(target.texture.Get(), nullptr, &target.renderTargetView));
+		ThrowIfFailed(device->CreateShaderResourceView(target.texture.Get(), nullptr, &target.shaderResourceView));
+	}
+
 	ID3D11Device* Graphics::GetDevice() {
 		return device.Get();
 	}
