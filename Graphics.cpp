@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "include/Graphics.h"
+#include "include/Plane.h"
 //#include "Camera.h"
 
 namespace CubeRenderer {
