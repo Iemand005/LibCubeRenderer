@@ -630,6 +630,62 @@ namespace CubeRenderer {
 		ThrowIfFailed(device->CreateShaderResourceView(target.texture.Get(), nullptr, &target.shaderResourceView));
 	}
 
+	void Graphics::CreateQuadResources(ID3DBlob* vertexShaderBlob, QuadResources& resources) {
+		D3D11_INPUT_ELEMENT_DESC layout[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
+		ThrowIfFailed(device->CreateInputLayout(layout, 2, vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize(), &resources.inputLayout));
+		CreateQuadVertexBuffer(2.0f, 2.0f, resources.vertexBuffer);
+
+		Plane plane = CreatePlane(2.0f, 2.0f);
+		D3D11_BUFFER_DESC desc = {};
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.ByteWidth = plane.indexCount * sizeof(USHORT);
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		D3D11_SUBRESOURCE_DATA data = { plane.indices, 0, 0 };
+		ThrowIfFailed(device->CreateBuffer(&desc, &data, &resources.indexBuffer));
+		DeletePlane(plane);
+
+		CreateQuadVertexBuffer(2.0f, 2.0f, resources.blurVertexBuffer);
+		plane = CreatePlane(2.0f, 2.0f);
+		desc.ByteWidth = plane.indexCount * sizeof(USHORT);
+		data = { plane.indices, 0, 0 };
+		ThrowIfFailed(device->CreateBuffer(&desc, &data, &resources.blurIndexBuffer));
+		DeletePlane(plane);
+
+		desc.ByteWidth = sizeof(XMMATRIX);
+		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.transformBuffer));
+		desc.ByteWidth = 16;
+		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.fadeBuffer));
+		desc.ByteWidth = 32;
+		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.blurBuffer));
+
+		D3D11_SAMPLER_DESC samplerDesc = {};
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &resources.sampler));
+
+		D3D11_RASTERIZER_DESC rasterizerDesc = {};
+		rasterizerDesc.FillMode = D3D11_FILL_SOLID;
+		rasterizerDesc.CullMode = D3D11_CULL_NONE;
+		ThrowIfFailed(device->CreateRasterizerState(&rasterizerDesc, &resources.rasterizer));
+	}
+
+	void Graphics::CreateQuadVertexBuffer(float width, float height, ComPtr<ID3D11Buffer>& vertexBuffer) {
+		Plane plane = CreatePlane(width, height);
+		D3D11_BUFFER_DESC desc = {};
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.ByteWidth = plane.vertexCount * sizeof(Vertex);
+		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		D3D11_SUBRESOURCE_DATA data = { plane.vertices, 0, 0 };
+		ThrowIfFailed(device->CreateBuffer(&desc, &data, &vertexBuffer));
+		DeletePlane(plane);
+	}
+
 	ID3D11Device* Graphics::GetDevice() {
 		return device.Get();
 	}

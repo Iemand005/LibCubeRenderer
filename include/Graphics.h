@@ -27,6 +27,18 @@ namespace CubeRenderer {
 			ComPtr<ID3D11RenderTargetView> renderTargetView;
 			ComPtr<ID3D11ShaderResourceView> shaderResourceView;
 		};
+		struct QuadResources {
+			ComPtr<ID3D11InputLayout> inputLayout;
+			ComPtr<ID3D11Buffer> vertexBuffer;
+			ComPtr<ID3D11Buffer> indexBuffer;
+			ComPtr<ID3D11Buffer> blurVertexBuffer;
+			ComPtr<ID3D11Buffer> blurIndexBuffer;
+			ComPtr<ID3D11Buffer> transformBuffer;
+			ComPtr<ID3D11Buffer> fadeBuffer;
+			ComPtr<ID3D11Buffer> blurBuffer;
+			ComPtr<ID3D11SamplerState> sampler;
+			ComPtr<ID3D11RasterizerState> rasterizer;
+		};
 
 		Graphics() {
 			camera.Attach(new Camera());
@@ -82,6 +94,8 @@ namespace CubeRenderer {
 		IDXGISurface* GetDXGIBackBuffer();
 		void GetBackBufferSize(UINT* width, UINT* height) const;
 		void EnsureRenderTarget(RenderTarget& target, UINT width, UINT height);
+		void CreateQuadResources(ID3DBlob* vertexShaderBlob, QuadResources& resources);
+		void CreateQuadVertexBuffer(float width, float height, ComPtr<ID3D11Buffer>& vertexBuffer);
 
 		void CreateRenderTexture(UINT width, UINT height);
 
