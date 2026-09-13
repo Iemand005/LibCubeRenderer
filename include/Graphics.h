@@ -28,6 +28,7 @@ namespace CubeRenderer {
 		};
 
 		Scene* Init(HWND window = NULL);
+		void InitForCustomRendering(HWND window = NULL);
 
 		void CreateDevice();
 		void CreateDevice(D3D_DRIVER_TYPE driverType);
@@ -71,6 +72,7 @@ namespace CubeRenderer {
 		void MouseMove(int x, int y = 0);
 		ID3D11DeviceContext* GetContext();
 		IDXGISwapChain* GetSwapChain();
+		ID3D11RenderTargetView* GetRenderTargetView();
 		IDXGISurface* GetDXGIBackBuffer();
 
 		void CreateRenderTexture(UINT width, UINT height);
@@ -112,8 +114,8 @@ namespace CubeRenderer {
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> textureRTV;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureSRV;
 
-		ID3D11Texture2D* backBuffer;
-		IDXGISurface* dxgiBackBuffer;
+		ID3D11Texture2D* backBuffer = nullptr;
+		IDXGISurface* dxgiBackBuffer = nullptr;
 
 
 		unique_ptr<Scene> scene;

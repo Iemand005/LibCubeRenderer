@@ -31,6 +31,14 @@ namespace CubeRenderer {
 		return scene;
 	}
 
+	void Graphics::InitForCustomRendering(HWND window) {
+		CreateDeviceAndSwapChain(window);
+		InitializeBlendState();
+
+		if (window) Resize(window);
+		else Resize(100, 100);
+	}
+
 	void Graphics::CreateDeviceAndSwapChain(HWND window) {
 		D3D_DRIVER_TYPE driverTypes[] = {
 			D3D_DRIVER_TYPE_HARDWARE,
@@ -573,6 +581,10 @@ namespace CubeRenderer {
 
 	IDXGISwapChain* Graphics::GetSwapChain() {
 		return swapChain.Get();
+	}
+
+	ID3D11RenderTargetView* Graphics::GetRenderTargetView() {
+		return renderTargetView.Get();
 	}
 
 	ID3D11Device* Graphics::GetDevice() {
