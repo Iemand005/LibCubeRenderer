@@ -639,6 +639,19 @@ namespace CubeRenderer {
 		return blob;
 	}
 
+	ComPtr<ID3DBlob> Graphics::CompileShaderResource(int resourceId, const char* target) {
+		HMODULE module = GetModuleHandleW(nullptr);
+		HRSRC resource = FindResourceW(module, MAKEINTRESOURCEW(resourceId), RT_RCDATA);
+		ThrowIfFailed(resource ? S_OK : HRESULT_FROM_WIN32(GetLastError()));
+
+		HGLOBAL data = LoadResource(module, resource);
+		ThrowIfFailed(data ? S_OK : HRESULT_FROM_WIN32(GetLastError()));
+
+		DWORD size = SizeofResource(module, resource);
+		ThrowIfFailed(size ? S_OK : HRESULT_FROM_WIN32(GetLastError()));
+		return CompileShader(LockResource(data), size, target);
+	}
+
 	void Graphics::CreateQuadResources(ID3DBlob* vertexShaderBlob, QuadResources& resources) {
 		D3D11_INPUT_ELEMENT_DESC layout[] = {
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
