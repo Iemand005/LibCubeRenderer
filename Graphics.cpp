@@ -677,19 +677,26 @@ namespace CubeRenderer {
 		ThrowIfFailed(device->CreateBuffer(&desc, &data, &resources.blurIndexBuffer));
 		DeletePlane(plane);
 
-		desc.ByteWidth = sizeof(XMMATRIX);
+		desc.ByteWidth = 192;
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.transformBuffer));
-		desc.ByteWidth = 96;
+		desc.ByteWidth = 16;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.fadeBuffer));
 		desc.ByteWidth = 32;
 		ThrowIfFailed(device->CreateBuffer(&desc, nullptr, &resources.blurBuffer));
 
 		D3D11_SAMPLER_DESC samplerDesc = {};
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+		samplerDesc.BorderColor[0] = 0.0f;
+		samplerDesc.BorderColor[1] = 0.0f;
+		samplerDesc.BorderColor[2] = 0.0f;
+		samplerDesc.BorderColor[3] = 1.0f;
+		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		samplerDesc.MinLOD = 0.0f;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 		ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &resources.sampler));
 
 		D3D11_RASTERIZER_DESC rasterizerDesc = {};
